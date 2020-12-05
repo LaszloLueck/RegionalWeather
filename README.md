@@ -3,6 +3,9 @@
 See current state for a short briefing about the final solution.
 - Written in C#
 - Runs in a Docker-Container
+- Stores data in elastic
+- visualization? Don´t know, think kibana or grafana.
+- 
 ...
 ## Current State
 Currently this project ist a collection of ideas. 
