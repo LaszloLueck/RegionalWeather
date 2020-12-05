@@ -5,4 +5,11 @@
         <TargetFramework>net5.0</TargetFramework>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Elasticsearch.Net" Version="7.10.0" />
+      <PackageReference Include="Optional" Version="4.0.0" />
+      <PackageReference Include="Quartz" Version="3.2.3" />
+      <PackageReference Include="Quartz.Plugins" Version="3.2.3" />
+    </ItemGroup>
+
 </Project>
