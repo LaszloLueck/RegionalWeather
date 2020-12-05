@@ -5,7 +5,9 @@ See current state for a short briefing about the final solution.
 - Runs in a Docker-Container
 - Stores data in elastic
 - visualization? Don´t know, think kibana or grafana.
-- 
+- in any case dotnet core 5.x / c# 9
+
+
 ...
 ## Current State
 Currently this project ist a collection of ideas. 
