@@ -8,7 +8,7 @@ See current state for a short briefing about the final solution.
 Currently this project ist a collection of ideas. 
 I imagine the following:
 - Reading of current weather information via OpenWeatherMap (https://openweathermap.org/) via its API
-- Fully amount of locations can be configured.
+- Full amount of locations can be configured.
 - In order of your selected OWM-plan, please be aware of the amount of API-calls (e.g. free plan  = max. 1.000.000 calls per month / max. 60 calls per min.).
 - The current weather information is called up every minute (configurable)
 - And stored with the corresponding geographic information in an ES instance.
