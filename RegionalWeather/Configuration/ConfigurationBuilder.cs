@@ -8,14 +8,16 @@ using RegionalWeather.Logging;
 namespace RegionalWeather.Configuration
 {
     public sealed record ConfigurationItems(string OwmApiKey, int RunsEvery, string PathToLocationsMap,
-        int Parallelism);
+        int Parallelism, string ElasticHostsAndPorts, string ElasticIndexName);
 
     public enum EnvEntries
     {
         OwmApiKey,
         RunsEvery,
         PathToLocationsMap,
-        Parallelism
+        Parallelism,
+        ElasticHostsAndPorts,
+        ElasticIndexName
     }
 
     public class ConfigurationBuilder
@@ -31,14 +33,15 @@ namespace RegionalWeather.Configuration
         public Option<ConfigurationItems> GetConfiguration()
         {
             Log.Info("Try to read the configuration items from env vars");
-            return (
+            return 
                 from owmApiKey in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.OwmApiKey)
                 from runsEvery in _configurationFactory.ReadEnvironmentVariableInt(EnvEntries.RunsEvery)
                 from parallelism in _configurationFactory.ReadEnvironmentVariableInt(EnvEntries.Parallelism)
                 from pathToLocationsMap in _configurationFactory.ReadEnvironmentVariableString(EnvEntries
                     .PathToLocationsMap)
-                select new ConfigurationItems(owmApiKey, runsEvery, pathToLocationsMap, parallelism)
-            );
+                from elasticHostsAndPorts in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.ElasticHostsAndPorts)
+                from elasticIndexName in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.ElasticIndexName)
+                select new ConfigurationItems(owmApiKey, runsEvery, pathToLocationsMap, parallelism, elasticHostsAndPorts, elasticIndexName);
         }
     }
 }

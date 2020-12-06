@@ -9,6 +9,7 @@ using Quartz;
 using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
 using RegionalWeather.Owm;
+using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
 
 namespace RegionalWeather.Scheduler
@@ -24,11 +25,31 @@ namespace RegionalWeather.Scheduler
             await Task.Run(async () =>
             {
                 await Log.InfoAsync("Use the following parameter for connections:");
-                await Log.InfoAsync($"Pihole host: {configuration.OwmApiKey}");
-                await Log.InfoAsync($"Pihole telnet port: {configuration.Parallelism}");
-                await Log.InfoAsync($"InfluxDb host: {configuration.RunsEvery}");
-                await Log.InfoAsync($"InfluxDb port: {configuration.PathToLocationsMap}");
+                await Log.InfoAsync($"Parallelism: {configuration.Parallelism}");
+                await Log.InfoAsync($"Runs every: {configuration.RunsEvery} s");
+                await Log.InfoAsync($"Path to Locations file: {configuration.PathToLocationsMap}");
+                await Log.InfoAsync($"ElasticSearch: {configuration.ElasticHostsAndPorts}");
+                IElasticConnectionBuilder connectionBuilder =
+                    new ElasticConnectionBuilder();
+                var elasticConnection = connectionBuilder.Build(configuration);
 
+                if (!elasticConnection.IndexExists(configuration.ElasticIndexName))
+                {
+                    if (elasticConnection.CreateIndex(configuration.ElasticIndexName))
+                    {
+                        await Log.InfoAsync($"index {configuration.ElasticIndexName} successfully created");
+                    }
+                    else
+                    {
+                        await Log.WarningAsync($"error while create index {configuration.ElasticIndexName}");
+                    }
+
+                }
+                else
+                {
+                    //elasticConnection.DeleteIndex(configuration.ElasticIndexName);
+                }
+                
                 foreach (var location in locations)
                 {
                     new OwmApiReader().ReadDataFromLocation(location, configuration.OwmApiKey
@@ -36,11 +57,9 @@ namespace RegionalWeather.Scheduler
                     {
                         var res = JsonSerializer.Deserialize<Root>(result);
                         Console.WriteLine(result);
-                        var node = new Uri("http://myserver:9200");
-                        var settings = new ConnectionSettings(node);
-                        var client = new ElasticClient(settings);
-                        
-                        
+
+
+
                     });
                 }
                 
