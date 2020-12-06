@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Optional.Linq;
 using RegionalWeather.Configuration;
+using RegionalWeather.FileRead;
 using RegionalWeather.Logging;
 using RegionalWeather.Scheduler;
 
@@ -17,15 +20,17 @@ namespace RegionalWeather
         static async Task Main(string[] args)
         {
             await Log.InfoAsync("starting app");
-            await Log.InfoAsync("Load and build the configuration");
 
             IConfigurationFactory configurationFactory = new ConfigurationFactory();
-            var mainTask = new ConfigurationBuilder(configurationFactory).GetConfiguration().Map(configuration => {
+
+            var mainTask = (from configuration in new ConfigurationBuilder(configurationFactory).GetConfiguration()
+                from locations in new LocationFileReader().Build(configuration).ReadConfiguration()
+                select new Tuple<ConfigurationItems, List<string>>(configuration, locations)).Map(tpl =>
+            {
                 Task.Run(async () => {
-                    await Log.InfoAsync("successfully loaded configuration");
                     await Log.InfoAsync("Build up the scheduler");
                     ISchedulerFactory schedulerFactory =
-                        new CustomSchedulerFactory<SchedulerJob>("job1", "group1", "trigger1", configuration);
+                        new CustomSchedulerFactory<SchedulerJob>("job1", "group1", "trigger1", tpl.Item1, tpl.Item2);
                     await schedulerFactory.RunScheduler();
                     await Log.InfoAsync("App is in running state!");
                 });

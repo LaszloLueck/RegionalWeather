@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Quartz;
 using Quartz.Impl;
@@ -16,8 +17,9 @@ namespace RegionalWeather.Scheduler
         private IScheduler _scheduler;
         private readonly StdSchedulerFactory _factory;
         private readonly ConfigurationItems _configurationItems;
+        private readonly List<string> _locations;
 
-        public CustomSchedulerFactory(string jobName, string groupName, string triggerName, ConfigurationItems configurationItems)
+        public CustomSchedulerFactory(string jobName, string groupName, string triggerName, ConfigurationItems configurationItems, List<string> locations)
         {
             Task.Run(async() =>
             {
@@ -31,6 +33,7 @@ namespace RegionalWeather.Scheduler
             _groupName = groupName;
             _triggerName = triggerName;
             _configurationItems = configurationItems;
+            _locations = locations;
             _factory = new StdSchedulerFactory();
         }
 
@@ -78,8 +81,7 @@ namespace RegionalWeather.Scheduler
             var job = GetJob();
             var trigger = GetTrigger();
             job.JobDataMap.Put("configuration", _configurationItems);
-            //job.JobDataMap.Put("influxConnectionFactory", _influxConnectionFactory);
-            //job.JobDataMap.Put("telnetClientFactory", _telnetClientFactory);
+            job.JobDataMap.Put("locations", _locations);
             await Log.InfoAsync("Schedule Job");
             await _scheduler.ScheduleJob(job, trigger);
         }

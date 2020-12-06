@@ -1,6 +1,7 @@
 ﻿#pragma warning disable
 using Optional;
 using Optional.Linq;
+using RegionalWeather.Logging;
 
 #pragma warning restore
 
@@ -19,6 +20,7 @@ namespace RegionalWeather.Configuration
 
     public class ConfigurationBuilder
     {
+        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ConfigurationBuilder>.GetLogger();
         private readonly IConfigurationFactory _configurationFactory;
 
         public ConfigurationBuilder(IConfigurationFactory configurationFactory)
@@ -28,6 +30,7 @@ namespace RegionalWeather.Configuration
 
         public Option<ConfigurationItems> GetConfiguration()
         {
+            Log.Info("Try to read the configuration items from env vars");
             return (
                 from owmApiKey in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.OwmApiKey)
                 from runsEvery in _configurationFactory.ReadEnvironmentVariableInt(EnvEntries.RunsEvery)
