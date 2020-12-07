@@ -37,3 +37,4 @@ I imagine the following:
 - travis functions
 - sonar functions
 - testcoverage
+- dashboards
