@@ -7,6 +7,7 @@ namespace RegionalWeather.Elastic
     {
         public string LocationName { get; set; }
         public int LocationId { get; set; }
+        public DateTime TimeStamp { get; set; }
         public DateTime Sunrise { get; set; }
         public DateTime SunSet { get; set; }
         public DateTime DateTime { get; set; }

@@ -72,6 +72,7 @@ namespace RegionalWeather.Scheduler
                             loc.Latitude = Math.Round(res.Coord.Lat, 2);
                             etl.Location = loc;
 
+                            etl.TimeStamp = DateTime.Now;
                             etl.DateTime = DateTimeOffset.FromUnixTimeSeconds(res.Dt).LocalDateTime;
                             etl.Sunrise = DateTimeOffset.FromUnixTimeSeconds(res.Sys.Sunrise).LocalDateTime;
                             etl.SunSet = DateTimeOffset.FromUnixTimeSeconds(res.Sys.Sunset).LocalDateTime;
