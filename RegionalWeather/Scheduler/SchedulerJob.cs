@@ -54,7 +54,7 @@ namespace RegionalWeather.Scheduler
                     new OwmApiReader().ReadDataFromLocation(location, configuration.OwmApiKey
                     ).MatchSome(result =>
                     {
-                        var res = JsonSerializer.Deserialize<Root>(result);
+                         var res = JsonSerializer.Deserialize<Root>(result);
                         if (res != null)
                         {
                             Console.WriteLine(result);
