@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Elasticsearch.Net;
 using Nest;
+using Optional;
 using RegionalWeather.Configuration;
+using RegionalWeather.Elastic;
 using RegionalWeather.Logging;
 
 namespace RegionalWeather.Transport.Elastic
@@ -42,12 +44,7 @@ namespace RegionalWeather.Transport.Elastic
         {
             Log.Info($"Write Document {document.LocationId}");
             var result = _elasticClient.Index(document, i => i.Index(indexName));
-            if (result.IsValid) return result.IsValid;
-            Log.Info(result.DebugInformation);
-            Log.Info(result.ServerError.Error.ToString());
-            Log.Info(result.OriginalException.Message);
-
-            return result.IsValid;
+            return ProcessResponse(result);
         }
 
         public bool IndexExists(string indexName)
@@ -62,12 +59,7 @@ namespace RegionalWeather.Transport.Elastic
             var result = _elasticClient
                 .Indices
                 .Create(indexName, index => index.Map<WeatherLocationDocument>(x => x.AutoMap()));
-            if (result.Acknowledged) return result.Acknowledged;
-            Log.Info(result.DebugInformation);
-            Log.Info(result.ServerError.Error.ToString());
-            Log.Info(result.OriginalException.Message);
-
-            return result.Acknowledged;
+            return ProcessResponse(result);
         }
 
         public bool DeleteIndex(string indexName)
@@ -76,57 +68,33 @@ namespace RegionalWeather.Transport.Elastic
             var result = _elasticClient
                 .Indices.Delete(indexName);
 
-            if (result.Acknowledged) return result.Acknowledged;
-
-            Log.Info(result.DebugInformation);
-            Log.Info(result.ServerError.Error.ToString());
-            Log.Info(result.OriginalException.Message);
-
-            return result.Acknowledged;
+            return ProcessResponse(result);
         }
-    }
 
-
-    public class Temperatures
-    {
-        public double Temperature { get; set; }
-        public double FeelsLike { get; set; }
-        public double TemperatureMin { get; set; }
-        public double TemperatureMax { get; set; }
-        public int Pressure { get; set; }
-        public int Humidity { get; set; }
-    }
-
-    public class Location
-    {
-        public double Longitude { get; set; }
-        public double Latitude { get; set; }
-    }
-    
-    public class Clouds {
-        public string CloudType { get; set; }
-        public string Description { get; set; }
-        public int Visibility { get; set; }
-        public int Density { get; set; }
-    }
-
-    public class Wind
-    {
-        public double Speed { get; set; }
-        public int Direction { get; set; }
-    }
-
-    public class WeatherLocationDocument
-    {
-        public string LocationName { get; set; }
-        public int LocationId { get; set; }
-        public DateTime Sunrise { get; set; }
-        public DateTime SunSet { get; set; }
-        public DateTime DateTime { get; set; }
-        public Location Location { get; set; }
-        public Temperatures Temperatures { get; set;}
-        public Clouds Clouds { get; set; }
-        public Wind Wind { get; set; }
+        private bool ProcessResponse<T>(T response)
+        {
+            
+            switch (response)
+            {
+                case DeleteIndexResponse deleteIndexResponse :
+                    if (deleteIndexResponse.Acknowledged) return deleteIndexResponse.Acknowledged;
+                    Log.Warning(deleteIndexResponse.DebugInformation);
+                    Log.Error(deleteIndexResponse.OriginalException, deleteIndexResponse.ServerError.Error.Reason);
+                    return deleteIndexResponse.Acknowledged;
+                case IndexResponse indexResponse:
+                    if (indexResponse.IsValid) return indexResponse.IsValid;
+                    Log.Warning(indexResponse.DebugInformation);
+                    Log.Error(indexResponse.OriginalException, indexResponse.ServerError.Error.Reason);
+                    return indexResponse.IsValid;
+                case CreateIndexResponse createIndexResponse:
+                    if (createIndexResponse.IsValid) return createIndexResponse.IsValid;
+                    Log.Warning(createIndexResponse.DebugInformation);
+                    Log.Error(createIndexResponse.OriginalException, createIndexResponse.ServerError.Error.Reason);
+                    return createIndexResponse.IsValid;
+            }
+            
+            return true;
+        }
         
     }
 }

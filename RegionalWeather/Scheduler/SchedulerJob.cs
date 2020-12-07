@@ -4,12 +4,13 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Quartz;
 using RegionalWeather.Configuration;
+using RegionalWeather.Elastic;
 using RegionalWeather.Logging;
 using RegionalWeather.Owm;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
-using Clouds = RegionalWeather.Transport.Elastic.Clouds;
-using Wind = RegionalWeather.Transport.Elastic.Wind;
+using Clouds = RegionalWeather.Elastic.Clouds;
+using Wind = RegionalWeather.Elastic.Wind;
 
 namespace RegionalWeather.Scheduler
 {

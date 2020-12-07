@@ -1,3 +1,15 @@
-﻿Weilerswist,de
-Zülpich,de
-Kerpen,de
+﻿q=Weilerswist,de
+q=Zülpich,de
+q=Kerpen,de
+zip=50321,de
+q=Vettweiß,de
+q=Nörvenich,de
+q=Erftstadt,de
+q=Merzenich,de
+q=Mechernich,de
+q=Satzvey,de
+q=Düren,de
+q=Euskirchen,de
+q=Heimbach,de
+q=Rheinbach,de
+q=Bad Münstereifel,de

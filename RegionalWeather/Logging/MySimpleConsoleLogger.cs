@@ -12,6 +12,8 @@ namespace RegionalWeather.Logging
 
         Task WarningAsync(string? message);
 
+        void Warning(string? message);
+        
         void Info(string? message, string type = "INFO");
 
         void Error(Exception? ex, string? message);
@@ -30,6 +32,14 @@ namespace RegionalWeather.Logging
         public void Info(string? message, string type = "INFO")
         {
             Console.WriteLine($"{DateTime.Now} {type} :: {typeof(T).Name} : {message}");
+        }
+
+        public void Warning(string? message)
+        {
+            var defaultConsoleColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Info(message, "WARN");
+            Console.ForegroundColor = defaultConsoleColor;
         }
 
         public void Error(Exception? ex, string? message)
