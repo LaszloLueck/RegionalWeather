@@ -32,4 +32,8 @@ I imagine the following:
 ## Whats next?
 - mount the locations file outside of the container so it is fully configurable from the host.
 - store the weather information to elastic
-- transform the original weather-to to an appropriated elastic to (only fields that i need).
+- transform the original weather-to to an appropriated elastic to (only fields that i need)
+- containerization
+- travis functions
+- sonar functions
+- testcoverage
