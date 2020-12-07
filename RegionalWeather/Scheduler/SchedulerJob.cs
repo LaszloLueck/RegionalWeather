@@ -46,7 +46,7 @@ namespace RegionalWeather.Scheduler
                 }
                 else
                 {
-                    //elasticConnection.DeleteIndex(configuration.ElasticIndexName);
+                    elasticConnection.DeleteIndex(configuration.ElasticIndexName);
                 }
 
                 foreach (var location in locations)
