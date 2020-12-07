@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
-using Nest;
 using Quartz;
 using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
 using RegionalWeather.Owm;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
+using Clouds = RegionalWeather.Transport.Elastic.Clouds;
+using Wind = RegionalWeather.Transport.Elastic.Wind;
 
 namespace RegionalWeather.Scheduler
 {
@@ -43,26 +42,59 @@ namespace RegionalWeather.Scheduler
                     {
                         await Log.WarningAsync($"error while create index {configuration.ElasticIndexName}");
                     }
-
                 }
                 else
                 {
                     //elasticConnection.DeleteIndex(configuration.ElasticIndexName);
                 }
-                
+
                 foreach (var location in locations)
                 {
                     new OwmApiReader().ReadDataFromLocation(location, configuration.OwmApiKey
                     ).MatchSome(result =>
                     {
                         var res = JsonSerializer.Deserialize<Root>(result);
-                        Console.WriteLine(result);
+                        if (res != null)
+                        {
+                            Console.WriteLine(result);
+                            var etl = new WeatherLocationDocument();
 
+                            var clds = new Clouds();
+                            clds.Density = res.Clouds.All;
+                            clds.Description = res.Weather[0].Description;
+                            clds.Visibility = res.Visibility;
+                            clds.CloudType = res.Weather[0].Main;
+                            etl.Clouds = clds;
 
+                            var loc = new Location();
+                            loc.Longitude = Math.Round(res.Coord.Lon, 2);
+                            loc.Latitude = Math.Round(res.Coord.Lat, 2);
+                            etl.Location = loc;
 
+                            etl.DateTime = DateTimeOffset.FromUnixTimeSeconds(res.Dt).LocalDateTime;
+                            etl.Sunrise = DateTimeOffset.FromUnixTimeSeconds(res.Sys.Sunrise).LocalDateTime;
+                            etl.SunSet = DateTimeOffset.FromUnixTimeSeconds(res.Sys.Sunset).LocalDateTime;
+
+                            var tmp = new Temperatures();
+                            tmp.Humidity = res.Main.Humidity;
+                            tmp.Pressure = res.Main.Pressure;
+                            tmp.Temperature = Math.Round(res.Main.Temp, 2);
+                            tmp.FeelsLike = Math.Round(res.Main.FeelsLike, 2);
+                            tmp.TemperatureMax = Math.Round(res.Main.TempMax, 2);
+                            tmp.TemperatureMin = Math.Round(res.Main.TempMin, 2);
+                            etl.Temperatures = tmp;
+
+                            var wnd = new Wind();
+                            wnd.Direction = res.Wind.Deg;
+                            wnd.Speed = Math.Round(res.Wind.Speed, 2);
+                            etl.Wind = wnd;
+
+                            etl.LocationId = res.Id;
+                            etl.LocationName = res.Name;
+                            elasticConnection.WriteDocument(etl, configuration.ElasticIndexName);
+                        }
                     });
                 }
-                
             });
         }
     }

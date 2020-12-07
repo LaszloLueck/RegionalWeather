@@ -38,6 +38,18 @@ namespace RegionalWeather.Transport.Elastic
             _elasticClient = new ElasticClient(setting);
         }
 
+        public bool WriteDocument<T>(T document, string indexName) where T : WeatherLocationDocument
+        {
+            Log.Info($"Write Document {document.LocationId}");
+            var result = _elasticClient.Index(document, i => i.Index(indexName));
+            if (result.IsValid) return result.IsValid;
+            Log.Info(result.DebugInformation);
+            Log.Info(result.ServerError.Error.ToString());
+            Log.Info(result.OriginalException.Message);
+
+            return result.IsValid;
+        }
+
         public bool IndexExists(string indexName)
         {
             Log.Info("Check if index exists.");
@@ -63,22 +75,26 @@ namespace RegionalWeather.Transport.Elastic
             Log.Info($"Delete index {indexName}");
             var result = _elasticClient
                 .Indices.Delete(indexName);
-            
-            if(result.Acknowledged) return result.Acknowledged;
-            
+
+            if (result.Acknowledged) return result.Acknowledged;
+
             Log.Info(result.DebugInformation);
             Log.Info(result.ServerError.Error.ToString());
             Log.Info(result.OriginalException.Message);
 
             return result.Acknowledged;
-            
         }
-        
-        
     }
-    public abstract class Document
+
+
+    public class Temperatures
     {
-        public JoinField Join { get; set; }
+        public double Temperature { get; set; }
+        public double FeelsLike { get; set; }
+        public double TemperatureMin { get; set; }
+        public double TemperatureMax { get; set; }
+        public int Pressure { get; set; }
+        public int Humidity { get; set; }
     }
 
     public class Location
@@ -86,11 +102,31 @@ namespace RegionalWeather.Transport.Elastic
         public double Longitude { get; set; }
         public double Latitude { get; set; }
     }
+    
+    public class Clouds {
+        public string CloudType { get; set; }
+        public string Description { get; set; }
+        public int Visibility { get; set; }
+        public int Density { get; set; }
+    }
+
+    public class Wind
+    {
+        public double Speed { get; set; }
+        public int Direction { get; set; }
+    }
+
     public class WeatherLocationDocument
     {
         public string LocationName { get; set; }
         public int LocationId { get; set; }
+        public DateTime Sunrise { get; set; }
+        public DateTime SunSet { get; set; }
         public DateTime DateTime { get; set; }
         public Location Location { get; set; }
+        public Temperatures Temperatures { get; set;}
+        public Clouds Clouds { get; set; }
+        public Wind Wind { get; set; }
+        
     }
 }
