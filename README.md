@@ -10,7 +10,7 @@ See current state for a short briefing about the final solution.
 
 ...
 ## Current State
-Currently this project ist a collection of ideas. 
+Currently this project ist a collection of ideas and a bunch of code.
 I imagine the following:
 - Reading of current weather information via OpenWeatherMap (https://openweathermap.org/) via its API
 - Full amount of locations can be configured.
@@ -19,3 +19,17 @@ I imagine the following:
 - And stored with the corresponding geographic information in an ES instance.
 - With Grafana or another tool, the weather information is made visible on a website (e.g. heat maps, graphs or similar).
 - The storage takes place continuously, which means that historical views are also possible.
+
+## What currently work (in some parts, not as a complete project)
+- Read out the weather informations for configurable places
+- convert the json to appropriate objects in c#
+- establish a connection to one or more elasticsearch instances
+- create an index
+- create a mapping
+- check if the index exists
+- delete the index
+
+## Whats next?
+- mount the locations file outside of the container so it is fully configurable from the host.
+- store the weather information to elastic
+- transform the original weather-to to an appropriated elastic to (only fields that i need).
