@@ -27,6 +27,7 @@ I imagine the following:
 - The storage takes place continuously, which means that historical views are also possible.
 
 ## What currently work (in some parts, not as a complete project)
+- Store the plain results of owm as file. Reason: For later possibility of complete reload historic data in a (possible new) elastic index. Also if i made changes in index- or data-settings we could use this, because currently i store not all data from owm to es.
 - Read out the weather informations for configurable places
 - convert the json to appropriate objects in c#
 - establish a connection to one or more elasticsearch instances
