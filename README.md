@@ -16,7 +16,7 @@ Not bad for first prototype, but a lot of work to do...
 <img src="images/prototype.png" witdh="1024"><img/>
 
 ## Current State
-Currently this project is a lot more as collection of ideas and a bunch of code.
+Currently this project is a lot more as an collection of ideas and a bunch of code.
 I imagine the following:
 - Reading of current weather information via OpenWeatherMap (https://openweathermap.org/) via its API --> check
 - Full amount of locations can be configured. --> check, realized per file
