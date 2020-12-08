@@ -9,6 +9,12 @@ See current state for a short briefing about the final solution.
 
 
 ...
+
+## How it looks like (very prototypish)
+Here you have a look a the grafana dashboard looks like. Above the temperature of 20 selected locations around me plotted as a time series. The second Panel is a Worldmap item that shows the current temperatures in the map.
+Not bad for first prototype, but a lot of work to do...
+<img src="images/prototype.png" witdh="1024"><img/>
+
 ## Current State
 Currently this project ist a collection of ideas and a bunch of code.
 I imagine the following:
@@ -28,13 +34,15 @@ I imagine the following:
 - create a mapping
 - check if the index exists
 - delete the index
-
-## Whats next?
 - mount the locations file outside of the container so it is fully configurable from the host.
 - store the weather information to elastic
+- dashboard (very prototypish)
+- containerization (runs as docker container on my server)
+
+## Whats next?
+
 - transform the original weather-to to an appropriated elastic to (only fields that i need)
-- containerization
 - travis functions
 - sonar functions
 - testcoverage
-- dashboards
+
