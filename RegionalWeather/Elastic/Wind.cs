@@ -4,5 +4,7 @@ namespace RegionalWeather.Elastic
     {
         public double Speed { get; set; }
         public int Direction { get; set; }
+        
+        public double Gust { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace RegionalWeather.Owm
 {
@@ -41,6 +42,12 @@ namespace RegionalWeather.Owm
         public string Name { get; set; } 
 
         [JsonPropertyName("cod")]
-        public int Cod { get; set; } 
+        public int Cod { get; set; }
+        
+        [JsonPropertyName("rain")]
+        public Rain Rain { get; set; } 
+        
+        [JsonPropertyName("snow")]
+        public Snow Snow { get; set; }
     }
 }

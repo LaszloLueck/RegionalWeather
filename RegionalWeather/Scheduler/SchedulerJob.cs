@@ -97,7 +97,7 @@ namespace RegionalWeather.Scheduler
                         };
                         etl.Temperatures = tmp;
 
-                        var wnd = new Wind {Direction = res.Wind.Deg, Speed = Math.Round(res.Wind.Speed, 2)};
+                        var wnd = new Wind {Direction = res.Wind.Deg, Speed = Math.Round(res.Wind.Speed, 2), Gust = Math.Round(res.Wind.Gust, 2)};
                         etl.Wind = wnd;
 
                         etl.LocationId = res.Id;
