@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using Optional;
 using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
@@ -19,7 +18,7 @@ namespace RegionalWeather.FileRead
 
         public LocationFileReaderImpl Build(ConfigurationItems configurationItems)
         {
-            return new LocationFileReaderImpl(configurationItems);
+            return new(configurationItems);
         }
     }
     

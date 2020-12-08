@@ -8,7 +8,7 @@ using RegionalWeather.Logging;
 namespace RegionalWeather.Configuration
 {
     public sealed record ConfigurationItems(string OwmApiKey, int RunsEvery, string PathToLocationsMap,
-        int Parallelism, string ElasticHostsAndPorts, string ElasticIndexName);
+        int Parallelism, string ElasticHostsAndPorts, string ElasticIndexName, string FileStorageTemplate);
 
     public enum EnvEntries
     {
@@ -17,7 +17,8 @@ namespace RegionalWeather.Configuration
         PathToLocationsMap,
         Parallelism,
         ElasticHostsAndPorts,
-        ElasticIndexName
+        ElasticIndexName,
+        FileStorageTemplate
     }
 
     public class ConfigurationBuilder
@@ -41,7 +42,8 @@ namespace RegionalWeather.Configuration
                     .PathToLocationsMap)
                 from elasticHostsAndPorts in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.ElasticHostsAndPorts)
                 from elasticIndexName in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.ElasticIndexName)
-                select new ConfigurationItems(owmApiKey, runsEvery, pathToLocationsMap, parallelism, elasticHostsAndPorts, elasticIndexName);
+                from fileStorageTemplate in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.FileStorageTemplate)
+                select new ConfigurationItems(owmApiKey, runsEvery, pathToLocationsMap, parallelism, elasticHostsAndPorts, elasticIndexName, fileStorageTemplate);
         }
     }
 }
