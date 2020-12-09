@@ -58,7 +58,9 @@ namespace RegionalWeather.Transport.Elastic
             Log.Info($"Create index {indexName} with Mapping");
             var result = _elasticClient
                 .Indices
-                .Create(indexName, index => index.Map<WeatherLocationDocument>(x => x.AutoMap()));
+                .Create(indexName, index => index
+                    .Map<WeatherLocationDocument>(x => x.AutoMap()
+                        .Properties(d => d.Date(e=>e.Name(en => en.TimeStamp)))));
             return ProcessResponse(result);
         }
 
