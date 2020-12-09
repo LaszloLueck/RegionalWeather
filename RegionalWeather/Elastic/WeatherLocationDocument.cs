@@ -1,4 +1,5 @@
 using System;
+using Nest;
 using RegionalWeather.Transport.Elastic;
 
 namespace RegionalWeather.Elastic
@@ -16,7 +17,7 @@ namespace RegionalWeather.Elastic
         public Clouds Clouds { get; set; }
         public Wind Wind { get; set; }
         
-        public double[] LocationArray { get; set; }
+        public GeoLocation GeoLocation { get; set; }
          
     }
 }

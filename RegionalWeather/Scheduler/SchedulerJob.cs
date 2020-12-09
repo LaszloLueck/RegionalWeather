@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Nest;
 using Quartz;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
@@ -102,7 +103,7 @@ namespace RegionalWeather.Scheduler
 
                         etl.LocationId = res.Id;
                         etl.LocationName = res.Name;
-                        etl.LocationArray = new[] {res.Coord.Lon, res.Coord.Lat};
+                        etl.GeoLocation = new GeoLocation(res.Coord.Lat, res.Coord.Lon);
                         elasticConnection.WriteDocument(etl, configuration.ElasticIndexName);
                     });
                 }
