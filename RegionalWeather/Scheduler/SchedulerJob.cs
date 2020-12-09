@@ -102,6 +102,7 @@ namespace RegionalWeather.Scheduler
 
                         etl.LocationId = res.Id;
                         etl.LocationName = res.Name;
+                        etl.LocationArray = new[] {res.Coord.Lon, res.Coord.Lat};
                         elasticConnection.WriteDocument(etl, configuration.ElasticIndexName);
                     });
                 }
