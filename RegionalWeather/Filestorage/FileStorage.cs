@@ -25,7 +25,7 @@ namespace RegionalWeather.Filestorage
         private readonly StreamWriter _sw;
         public FileStorageImpl(ConfigurationItems configurationItems)
         {
-            var filename = configurationItems.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyddMM"));
+            var filename = configurationItems.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
             _sw = new StreamWriter(filename, true);
         }
 
