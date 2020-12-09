@@ -27,6 +27,7 @@ I imagine the following:
 - The storage takes place continuously, which means that historical views are also possible. --> check, it works by default with elastic.
 
 ## What currently work (in some parts, not as a complete project)
+- I must delete the index and all the data are gone! Bad thing! But i would create a solution. I code a custom reindexer, that runs scheduled an look into a configurable directory. If there is any of the backup files, the data of that file would be reindexed.
 - Store the plain results of owm as file. Reason: For later possibility of complete reload historic data in a (possible new) elastic index. Also if i made changes in index- or data-settings we could use this, because currently i store not all data from owm to es.
 - Read out the weather informations for configurable places
 - convert the json to appropriate objects in c#
