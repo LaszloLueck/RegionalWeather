@@ -13,7 +13,14 @@ See current state for a short briefing about the final solution.
 ## How it looks like (very prototypish)
 Here you have a look a the grafana dashboard looks like. Above the temperature of 20 selected locations around me plotted as a time series. The second Panel is a Worldmap item that shows the current temperatures in the map.
 Not bad for first prototype, but a lot of work to do...
+
+The screenshot shows an example of a grafana dashboard with realtime data
 <img src="images/prototype.png" witdh="1024"><img/>
+
+This screenshot shows, how its look like with Kibana. Left, the geo-map with current temperatures, right the temperature timeline splitted by location.
+<img src="images/prototype_kibana.png" width="1024"></img>
+
+I don´t know, what graph-visualization tool win at the end, maybe there could be 2 tools for same things.
 
 ## Current State
 Currently this project is a lot more as an collection of ideas and a bunch of code.
