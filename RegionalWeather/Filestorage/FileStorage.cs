@@ -41,17 +41,17 @@ namespace RegionalWeather.Filestorage
         }
         
 
-        public Option<bool> WriteData(string data)
+        public Option<string> WriteData(string data)
         {
             try
             {
                 _sw.WriteLine(data);
-                return Option.Some(true);
+                return Option.Some(data);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error while writing data to file");
-                return Option.None<bool>();
+                return Option.None<string>();
             }
         }
         

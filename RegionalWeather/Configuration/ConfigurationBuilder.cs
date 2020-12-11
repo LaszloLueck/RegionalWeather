@@ -8,7 +8,8 @@ using RegionalWeather.Logging;
 namespace RegionalWeather.Configuration
 {
     public sealed record ConfigurationItems(string OwmApiKey, int RunsEvery, string PathToLocationsMap,
-        int Parallelism, string ElasticHostsAndPorts, string ElasticIndexName, string FileStorageTemplate);
+        int Parallelism, string ElasticHostsAndPorts, string ElasticIndexName, string FileStorageTemplate,
+        int ReindexLookupEvery, string ReindexLookupPath);
 
     public enum EnvEntries
     {
@@ -18,7 +19,9 @@ namespace RegionalWeather.Configuration
         Parallelism,
         ElasticHostsAndPorts,
         ElasticIndexName,
-        FileStorageTemplate
+        FileStorageTemplate,
+        ReindexLookupEvery,
+        ReindexLookupPath
     }
 
     public class ConfigurationBuilder
@@ -43,7 +46,9 @@ namespace RegionalWeather.Configuration
                 from elasticHostsAndPorts in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.ElasticHostsAndPorts)
                 from elasticIndexName in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.ElasticIndexName)
                 from fileStorageTemplate in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.FileStorageTemplate)
-                select new ConfigurationItems(owmApiKey, runsEvery, pathToLocationsMap, parallelism, elasticHostsAndPorts, elasticIndexName, fileStorageTemplate);
+                from reindexLookupEvery in _configurationFactory.ReadEnvironmentVariableInt(EnvEntries.ReindexLookupEvery)
+                from reindexLookupPath in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.ReindexLookupPath)
+                select new ConfigurationItems(owmApiKey, runsEvery, pathToLocationsMap, parallelism, elasticHostsAndPorts, elasticIndexName, fileStorageTemplate,reindexLookupEvery,reindexLookupPath);
         }
     }
 }

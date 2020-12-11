@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Elasticsearch.Net;
 using Nest;
-using Optional;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
 using RegionalWeather.Logging;
@@ -44,6 +43,12 @@ namespace RegionalWeather.Transport.Elastic
         {
             Log.Info($"Write Document {document.LocationId}");
             var result = _elasticClient.Index(document, i => i.Index(indexName));
+            return ProcessResponse(result);
+        }
+
+        public bool BulkWriteDocument<T>(IEnumerable<T> documents, string indexName) where T : WeatherLocationDocument
+        {
+            var result = _elasticClient.IndexMany(documents, indexName);
             return ProcessResponse(result);
         }
 
@@ -93,9 +98,19 @@ namespace RegionalWeather.Transport.Elastic
                     Log.Warning(createIndexResponse.DebugInformation);
                     Log.Error(createIndexResponse.OriginalException, createIndexResponse.ServerError.Error.Reason);
                     return createIndexResponse.IsValid;
+                case BulkResponse bulkResponse:
+                    if (bulkResponse.IsValid)
+                    {
+                        Log.Info($"Successfully write {bulkResponse.Items.Count} documents to elastic");
+                        return bulkResponse.IsValid;
+                    }
+                    Log.Warning(bulkResponse.DebugInformation);
+                    Log.Error(bulkResponse.OriginalException, bulkResponse.ServerError.Error.Reason);
+                    return bulkResponse.IsValid;
+                default:
+                    Log.Warning($"Cannot find Conversion for type <{response.GetType().Name}>");
+                    return false;
             }
-            
-            return true;
         }
         
     }

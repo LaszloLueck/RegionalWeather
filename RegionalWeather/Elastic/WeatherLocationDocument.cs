@@ -1,6 +1,5 @@
 using System;
 using Nest;
-using RegionalWeather.Transport.Elastic;
 
 namespace RegionalWeather.Elastic
 {
