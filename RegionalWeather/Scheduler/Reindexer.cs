@@ -47,10 +47,10 @@ namespace RegionalWeather.Scheduler
 
                     (from file in files select file)
                         .ToList()
-                        .ForEach(f =>
+                        .ForEach(file =>
                         {
-                            Log.Info($"Backup Data from file {f}");
-                            File.ReadAllLines(f).Select(f => f)
+                            Log.Info($"Backup Data from file {file}");
+                            File.ReadAllLines(file)
                                 .Select(loc => JsonSerializer.Deserialize<Root>(loc))
                                 .Where(element => element != null)
                                 .Select(element => element!)
@@ -60,9 +60,9 @@ namespace RegionalWeather.Scheduler
                                 .ToList()
                                 .ForEach(k =>
                                     elasticConnection.BulkWriteDocument(k, configuration.ElasticIndexName));
-                            
-                            Log.Info("Remove the file after indexing");
-                            File.Delete(f);
+
+                            Log.Info($"Remove the file <{file}> after indexing");
+                            File.Delete(file);
                         });
 
                 }

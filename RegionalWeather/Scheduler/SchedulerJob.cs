@@ -1,9 +1,11 @@
 #nullable enable
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Optional;
+using Optional.Linq;
+using Optional.Unsafe;
 using Quartz;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
@@ -11,6 +13,7 @@ using RegionalWeather.Filestorage;
 using RegionalWeather.Logging;
 using RegionalWeather.Owm;
 using RegionalWeather.Transport.Elastic;
+using RegionalWeather.Transport.Owm;
 
 namespace RegionalWeather.Scheduler
 {
@@ -52,22 +55,20 @@ namespace RegionalWeather.Scheduler
 
                 IFileStorage fileStorage = new FileStorage();
                 var storageImpl = fileStorage.Build(configuration);
+                var dataReader = new OwmApiReader();
+                
+                var locationsWeather = locations.Select(location =>
+                {
+                    return dataReader.ReadDataFromLocation(location, configuration.OwmApiKey)
+                        .Select(locationData => storageImpl.WriteData(locationData))
+                        .Flatten()
+                        .Map(locationData => JsonSerializer.Deserialize<Root>(locationData))
+                        .Where(element => element != null)
+                        .Select(element => element!)
+                        .Select(OwmToElasticDocumentConverter.Convert)
+                        .ValueOrFailure();
+                });
 
-                var locationsWeather = (from location in locations select location)
-                    .Select(toWrite =>
-                    {
-                        storageImpl.WriteData(toWrite);
-                        return toWrite;
-                    })
-                    .Select(loc => JsonSerializer.Deserialize<Root>(loc))
-                    .Where(element => element != null)
-                    .Select(element => element!)
-                    .Select(element =>
-                    {
-                        Log.Info("Prepare doc: " + element.Name);
-                        return element;
-                    })
-                    .Select(OwmToElasticDocumentConverter.Convert);
 
                 elasticConnection.BulkWriteDocument(locationsWeather, configuration.ElasticIndexName);
                 
