@@ -57,6 +57,14 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
+### 2020-12-12 update data handling
+Until now, the data-property for the timeseries index like prometheus or elasticsearch was the field owm.dateTime. But this field represents the timestamp of the last measurement of the location. I decided to reimplement some things, but this makes the, until now, collected data unusuable.
+When i read a dataset for a location i inject and store the current timestamp to the json. This json would be stored in the storage files and would be stored in elastic.
+
+If you need, to reindex the whole data, the timestamp is reindexed also. If you plan to use a timeseries database like prometheus or influx or whatever, don't forget to select the field "timeStamp" as the datafield for the timeseries.
+
+Cheers!
+
 ### 2020-12-12 early in the morning
 - I´ve finished the reindexer. This piece of code looks continously in a specified folder for files, take the data and reindex the data to elasticsearch. If the data is reindexed, the file will be deleted. For that todo, i have created another scheduler.
 - Another thing i have implemented ist the bulk indexing functionality. Before, every document would be inserted in elastic in a single step. From now on, all the defult work (takes the current weather data) would be written to elastic in one bulk step. If you reindex a document of a day (for my setting => Every 12 measurements per hour * 24 * 20 locations) with 5760 elements, it is not such a good idea to reindex line by line. With the bulk operation, i reindex now 100 documents in one piece. With that bulk thing 5760 documents would be reindexed in 2 seconds. Not so bad for a single es instance.
