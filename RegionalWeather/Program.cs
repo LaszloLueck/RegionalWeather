@@ -33,7 +33,7 @@ namespace RegionalWeather
                         new CustomSchedulerFactory<SchedulerJob>("job1", "group1", "trigger1", tpl.Item1, tpl.Item2);
 
                     ISchedulerFactory reindexerFactory =
-                        new ReindexerFactory<Reindexer>("reindexJob", "reindexGroup", "reindexTrigger", tpl.Item1);
+                        new ReindexerFactory<ReindexerJob>("reindexJob", "reindexGroup", "reindexTrigger", tpl.Item1);
 
                     await reindexerFactory.RunScheduler();
                     await schedulerFactory.RunScheduler();

@@ -10,6 +10,8 @@ namespace RegionalWeather.Elastic
         {
             var etl = new WeatherLocationDocument();
 
+            etl.Id = Guid.NewGuid();
+            
             var clds = new Clouds
             {
                 Density = owmDoc.Clouds.All,
@@ -25,7 +27,7 @@ namespace RegionalWeather.Elastic
             };
             etl.Location = loc;
 
-            etl.TimeStamp = DateTime.Now;
+            etl.TimeStamp = owmDoc.ReadTime;
             etl.DateTime = DateTimeOffset.FromUnixTimeSeconds(owmDoc.Dt).LocalDateTime;
             etl.Sunrise = DateTimeOffset.FromUnixTimeSeconds(owmDoc.Sys.Sunrise).LocalDateTime;
             etl.SunSet = DateTimeOffset.FromUnixTimeSeconds(owmDoc.Sys.Sunset).LocalDateTime;

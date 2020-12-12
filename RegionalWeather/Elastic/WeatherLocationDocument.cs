@@ -5,6 +5,7 @@ namespace RegionalWeather.Elastic
 {
     public class WeatherLocationDocument
     {
+        public Guid Id { get; set; }
         public string LocationName { get; set; }
         public int LocationId { get; set; }
         public DateTime TimeStamp { get; set; }

@@ -1,8 +1,10 @@
 using System;
 using System.IO;
+using System.Text.Json;
 using Optional;
 using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
+using RegionalWeather.Owm;
 
 namespace RegionalWeather.Filestorage
 {
@@ -41,17 +43,19 @@ namespace RegionalWeather.Filestorage
         }
         
 
-        public Option<string> WriteData(string data)
+        public Option<Root> WriteData(Root sourceObject)
         {
             try
             {
+                sourceObject.ReadTime = DateTime.Now;
+                var data = JsonSerializer.Serialize(sourceObject);   
                 _sw.WriteLine(data);
-                return Option.Some(data);
+                return Option.Some(sourceObject);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error while writing data to file");
-                return Option.None<string>();
+                return Option.None<Root>();
             }
         }
         

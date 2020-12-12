@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace RegionalWeather.Owm
@@ -42,5 +43,8 @@ namespace RegionalWeather.Owm
 
         [JsonPropertyName("cod")]
         public int Cod { get; set; } 
+        
+        [JsonPropertyName("readTime")]
+        public DateTime ReadTime { get; set; }
     }
 }

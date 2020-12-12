@@ -59,12 +59,12 @@ namespace RegionalWeather.Scheduler
                 
                 var locationsWeather = locations.Select(location =>
                 {
-                    return dataReader.ReadDataFromLocation(location, configuration.OwmApiKey)
-                        .Select(locationData => storageImpl.WriteData(locationData))
-                        .Flatten()
-                        .Map(locationData => JsonSerializer.Deserialize<Root>(locationData))
+                    return OwmApiReader.ReadDataFromLocation(location, configuration.OwmApiKey)
+                        .Select(data => JsonSerializer.Deserialize<Root>(data))
                         .Where(element => element != null)
                         .Select(element => element!)
+                        .Select(element => storageImpl.WriteData(element))
+                        .Flatten()
                         .Select(OwmToElasticDocumentConverter.Convert)
                         .ValueOrFailure();
                 });

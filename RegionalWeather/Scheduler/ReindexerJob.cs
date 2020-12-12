@@ -11,9 +11,9 @@ using RegionalWeather.Transport.Elastic;
 
 namespace RegionalWeather.Scheduler
 {
-    public class Reindexer : IJob
+    public class ReindexerJob : IJob
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<Reindexer>.GetLogger();
+        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ReindexerJob>.GetLogger();
 
         public async Task Execute(IJobExecutionContext context)
         {
