@@ -38,7 +38,7 @@ services:
       - Parallelism=5
       - PathToLocationsMap=./locations/Locations.txt
       - ElasticHostsAndPorts=http://192.168.19.19:9200
-      - OwmApiKey=20a4bb2d1f665aa4091461586f0aeae9
+      - OwmApiKey=THEKEYYOUWOULDRECEIVEIFYOUREGISTERONOWM
       - ElasticIndexName=weatherlocations
       - FileStorageTemplate=./storage/FileStorage_[CURRENTDATE].dat
       - ReindexLookupEvery=60
