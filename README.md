@@ -4,7 +4,7 @@ See current state for a short briefing about the final solution.
 - Written in C#
 - Runs in a Docker-Container
 - Stores data in elastic
-- visualization? Don´t know, think kibana or grafana.
+- visualization? Don´t know, think kibana or grafana or kibana and grafana.
 - in any case dotnet core 5.x / c# 9
 
 
@@ -54,6 +54,8 @@ networks:
       name: static-net
 ```
 
+Explanations follows, too tired atm.
+
 ## Changes
 ### 2020-12-12 early in the morning
 - I´ve finished the reindexer. This peace of code looks continously in a specified folder for files, take the data and reindex the data to elasticsearch. If the data is reindexed, the file will be deleted. For that todo, i have created another scheduler.
@@ -100,7 +102,8 @@ I imagine the following:
 - transform the original weather-to to an appropriated elastic to (only fields that i need)
 
 ## Whats next?
-- currently the core thing of the app works blocking and not async / awaitable. That would be refactored!
+- currently the core thing of the app works blocking and not async / awaitable. That would be refactored shortely!
+- put a lot more visualisations to the dashboards. Currently it is only testwise.
 - travis functions
 - sonar functions
 - testcoverage
