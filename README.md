@@ -10,6 +10,12 @@ See current state for a short briefing about the final solution.
 
 ...
 
+## Changes
+### 2020-12-12 early in the morning
+- I´ve finished the reindexer. This peace of code looks continously in a specified folder for files, take the data and reindex the data to elasticsearch. If the data is reindexed, the file will be deleted. For that todo, i have created another scheduler.
+- Another thing i have implemented ist the bulk indexing functionality. Before, every document would be inserted in elastic in a single step. From now on, all the defult work (takes the current weather data) would be written to elastic in one bulk step. If you reindex a document of a day (for my setting => Every 12 measurements per hour * 24 * 20 locations) with 5760 elements, it is not such a good idea to reindex line by line. With the bulk operation, i reindex now 100 documents in one piece. With that bulk thing 5760 documents would be reindexed in 2 seconds. Not so bad for a single es instance.
+- For the bulk thing and because i found the code nice i refactor it a little and use a lot of more linq / lambda shit.
+
 ## How it looks like (very prototypish)
 Here you have a look a the grafana dashboard looks like. Above the temperature of 20 selected locations around me plotted as a time series. The second Panel is a Worldmap item that shows the current temperatures in the map.
 Not bad for first prototype, but a lot of work to do...
@@ -47,10 +53,10 @@ I imagine the following:
 - store the weather information to elastic
 - dashboard (very prototypish)
 - containerization (runs as docker container on my server)
+- transform the original weather-to to an appropriated elastic to (only fields that i need)
 
 ## Whats next?
-
-- transform the original weather-to to an appropriated elastic to (only fields that i need)
+- currently the core thing of the app works blocking and not async / awaitable. That would be refactored!
 - travis functions
 - sonar functions
 - testcoverage
