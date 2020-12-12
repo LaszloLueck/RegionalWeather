@@ -10,6 +10,50 @@ See current state for a short briefing about the final solution.
 
 ...
 
+## How it works
+The simplest way to get this piece of code working, ist you use it as docker-container.
+For the docker-container you need 2 things.
+- The docker-compose.yaml, i recommend to use docker-compose for handling the parameters.
+- The parameter to get and build a container from the image.
+
+### docker-compose.yaml
+First, lets have a look to the docker-compose.yaml
+```yaml
+version: "3.7"
+
+services:
+  regionalweather:
+    container_name: regionalweather
+    image: regionalweather:latest
+    networks:
+      default:
+        ipv4_address: 192.168.19.20
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10k"
+        max-file: "20"
+    environment:
+      - RunsEvery=300
+      - Parallelism=5
+      - PathToLocationsMap=./locations/Locations.txt
+      - ElasticHostsAndPorts=http://192.168.19.19:9200
+      - OwmApiKey=20a4bb2d1f665aa4091461586f0aeae9
+      - ElasticIndexName=weatherlocations
+      - FileStorageTemplate=./storage/FileStorage_[CURRENTDATE].dat
+      - ReindexLookupEvery=60
+      - ReindexLookupPath=./backup
+    volumes:
+      - .regionalweather:/app/locations
+      - .storage:/app/storage
+      - .backup:/app/backup
+    restart: always
+networks:
+  default:
+    external:
+      name: static-net
+```
+
 ## Changes
 ### 2020-12-12 early in the morning
 - I´ve finished the reindexer. This peace of code looks continously in a specified folder for files, take the data and reindex the data to elasticsearch. If the data is reindexed, the file will be deleted. For that todo, i have created another scheduler.
