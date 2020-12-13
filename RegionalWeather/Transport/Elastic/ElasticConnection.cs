@@ -47,9 +47,16 @@ namespace RegionalWeather.Transport.Elastic
             return ProcessResponse(result);
         }
 
-        public bool BulkWriteDocument<T>(IEnumerable<T> documents, string indexName) where T : WeatherLocationDocument
+        public bool BulkWriteDocuments<T>(IEnumerable<T> documents, string indexName) where T : WeatherLocationDocument
         {
             var result = _elasticClient.IndexMany(documents, indexName);
+            return ProcessResponse(result);
+        }
+
+        public async Task<bool> BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
+            where T : WeatherLocationDocument
+        {
+            var result = await _elasticClient.IndexManyAsync(documents, indexName);
             return ProcessResponse(result);
         }
 
@@ -57,7 +64,7 @@ namespace RegionalWeather.Transport.Elastic
         {
             await Log.InfoAsync("Check if index exists");
             var ret = await _elasticClient.Indices.ExistsAsync(indexName);
-            return ProcessResponse(ret);
+            return ret.Exists;
         }
         
         public bool IndexExists(string indexName)
@@ -111,11 +118,6 @@ namespace RegionalWeather.Transport.Elastic
             
             switch (response)
             {
-                case ExistsResponse existsResponse:
-                    if (existsResponse.IsValid) return existsResponse.Exists;
-                    Log.Warning(existsResponse.DebugInformation);
-                    Log.Error(existsResponse.OriginalException, existsResponse.ServerError.Error.Reason);
-                    return existsResponse.Exists;
                 case DeleteIndexResponse deleteIndexResponse :
                     if (deleteIndexResponse.Acknowledged) return deleteIndexResponse.Acknowledged;
                     Log.Warning(deleteIndexResponse.DebugInformation);

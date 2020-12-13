@@ -8,5 +8,8 @@ namespace RegionalWeather.Owm
 
         [JsonPropertyName("deg")]
         public int Deg { get; set; } 
+        
+        [JsonPropertyName("gust")]
+        public double Gust { get; set; }
     }
 }

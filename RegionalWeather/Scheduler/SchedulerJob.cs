@@ -51,15 +51,15 @@ namespace RegionalWeather.Scheduler
                 {
                     //elasticConnection.DeleteIndex(configuration.ElasticIndexName);
                 }
-                
+
 
                 IFileStorage fileStorage = new FileStorage();
                 var storageImpl = fileStorage.Build(configuration);
-                var locationsOpt = await 
+                var locationsOpt = await
                     new LocationFileReader().Build(configuration).ReadConfigurationAsync();
-                
-                
-                locationsOpt.MatchSome(locations =>
+
+
+                locationsOpt.MatchSome(async locations =>
                 {
                     var results = locations.Select(location =>
                     {
@@ -72,9 +72,10 @@ namespace RegionalWeather.Scheduler
                             .Select(OwmToElasticDocumentConverter.Convert)
                             .ValueOrFailure();
                     });
-                    elasticConnection.BulkWriteDocument(results, configuration.ElasticIndexName);
+
+                    await elasticConnection.BulkWriteDocumentsAsync(results, configuration.ElasticIndexName);
                 });
-               
+
                 storageImpl.FlushData();
                 storageImpl.CloseFileStream();
             });

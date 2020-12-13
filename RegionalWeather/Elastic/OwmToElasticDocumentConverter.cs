@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Nest;
 using RegionalWeather.Owm;
 
@@ -6,12 +7,16 @@ namespace RegionalWeather.Elastic
 {
     public static class OwmToElasticDocumentConverter
     {
+        public static async Task<WeatherLocationDocument> ConvertAsync(Root owmDoc)
+        {
+            return await Task.Run(() => Convert(owmDoc));
+        }
+
         public static WeatherLocationDocument Convert(Root owmDoc)
         {
-            var etl = new WeatherLocationDocument();
+            var etl = new WeatherLocationDocument {Id = Guid.NewGuid()};
 
-            etl.Id = Guid.NewGuid();
-            
+
             var clds = new Clouds
             {
                 Density = owmDoc.Clouds.All,
@@ -43,15 +48,37 @@ namespace RegionalWeather.Elastic
             };
             etl.Temperatures = tmp;
 
-            var wnd = new Wind {Direction = owmDoc.Wind.Deg, Speed = Math.Round(owmDoc.Wind.Speed, 2)};
+            var wnd = new Wind
+            {
+                Direction = owmDoc.Wind.Deg, 
+                Speed = Math.Round(owmDoc.Wind.Speed, 2),
+                Gust = Math.Round(owmDoc.Wind.Gust, 2)
+            };
             etl.Wind = wnd;
 
+
+
+            var rain = new Rain();
+
+
+            if (owmDoc.Rain != null)
+            {
+                rain.OneHour = owmDoc.Rain.OneHour;
+                rain.ThreeHour = owmDoc.Rain.ThreeHour;
+            }
+            else
+            {
+                rain.OneHour = 0;
+                rain.ThreeHour = 0;
+            }
+            
+            
+            etl.Rain = rain;
+            
             etl.LocationId = owmDoc.Id;
             etl.LocationName = owmDoc.Name;
             etl.GeoLocation = new GeoLocation(owmDoc.Coord.Lat, owmDoc.Coord.Lon);
             return etl;
         }
-        
-        
     }
 }
