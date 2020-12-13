@@ -66,10 +66,13 @@ Damn, no rain for 2 days, rain.1h and rain.3h is always 0. ;)
 <img src="images/screenshot_gust.png" width="1024"></img>
 
 Also i implement some more things async / awaitable.
+
 The etl-process is currently mostly synchron / blocking. The reason is, that LINQ is not as much async await compatible as i hoped.
-In scala, you can process things with map / flatmap keywords.
-The handling in c# isn't so optimal.
+
+In scala, you can process things with map / flatmap keywords. The handling in c# isn't here so optimal.
+
 On the other side, i reimport and reindex approx. 7.000 documents in 2 seconds (read from file, process, write to es).
+
 There are other things more important.
 
 Cheers!
