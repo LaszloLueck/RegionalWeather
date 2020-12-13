@@ -1,5 +1,4 @@
 #nullable enable
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -59,11 +58,11 @@ namespace RegionalWeather.Scheduler
                     new LocationFileReader().Build(configuration).ReadConfigurationAsync();
                 
                 
-                locationsOpt.MatchSome(locations =>
+                locationsOpt.MatchSome(async locations =>
                 {
-                    var results = locations.Select(location =>
+                    var results = locations.Select(async location =>
                     {
-                        return OwmApiReader.ReadDataFromLocation(location, configuration.OwmApiKey)
+                        return (await OwmApiReader.ReadDataFromLocationAsync(location, configuration.OwmApiKey))
                             .Select(data => JsonSerializer.Deserialize<Root>(data))
                             .Where(element => element != null)
                             .Select(element => element!)
@@ -71,8 +70,20 @@ namespace RegionalWeather.Scheduler
                             .Flatten()
                             .Select(OwmToElasticDocumentConverter.Convert)
                             .ValueOrFailure();
+                            
+                            
+                        // return OwmApiReader.ReadDataFromLocation(location, configuration.OwmApiKey)
+                        //     .Select(data => JsonSerializer.Deserialize<Root>(data))
+                        //     .Where(element => element != null)
+                        //     .Select(element => element!)
+                        //     .Select(element => storageImpl.WriteData(element))
+                        //     .Flatten()
+                        //     .Select(OwmToElasticDocumentConverter.Convert)
+                        //     .ValueOrFailure();
                     });
-                    elasticConnection.BulkWriteDocument(results, configuration.ElasticIndexName);
+
+                    var tasks = await Task.WhenAll(results.ToList());
+                    await elasticConnection.BulkWriteDocumentsAsync(tasks, configuration.ElasticIndexName);
                 });
                
                 storageImpl.FlushData();

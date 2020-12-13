@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Optional.Linq;
 using RegionalWeather.Configuration;
-using RegionalWeather.FileRead;
 using RegionalWeather.Logging;
 using RegionalWeather.Scheduler;
 

@@ -60,7 +60,7 @@ namespace RegionalWeather.Scheduler
                                 .GroupBy(g => g.index / 100, o => o.owm)
                                 .ToList()
                                 .ForEach(k =>
-                                    elasticConnection.BulkWriteDocument(k, configuration.ElasticIndexName));
+                                    elasticConnection.BulkWriteDocuments(k, configuration.ElasticIndexName));
 
                             Log.Info($"Remove the file <{file}> after indexing");
                             File.Delete(file);

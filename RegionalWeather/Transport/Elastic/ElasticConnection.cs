@@ -47,9 +47,16 @@ namespace RegionalWeather.Transport.Elastic
             return ProcessResponse(result);
         }
 
-        public bool BulkWriteDocument<T>(IEnumerable<T> documents, string indexName) where T : WeatherLocationDocument
+        public bool BulkWriteDocuments<T>(IEnumerable<T> documents, string indexName) where T : WeatherLocationDocument
         {
             var result = _elasticClient.IndexMany(documents, indexName);
+            return ProcessResponse(result);
+        }
+
+        public async Task<bool> BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
+            where T : WeatherLocationDocument
+        {
+            var result = await _elasticClient.IndexManyAsync(documents, indexName);
             return ProcessResponse(result);
         }
 
