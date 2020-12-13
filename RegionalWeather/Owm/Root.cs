@@ -22,6 +22,9 @@ namespace RegionalWeather.Owm
 
         [JsonPropertyName("wind")]
         public Wind Wind { get; set; } 
+        
+        [JsonPropertyName("rain")]
+        public Rain Rain { get; set; }
 
         [JsonPropertyName("clouds")]
         public Clouds Clouds { get; set; } 

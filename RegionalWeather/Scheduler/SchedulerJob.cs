@@ -1,4 +1,5 @@
 #nullable enable
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -50,19 +51,19 @@ namespace RegionalWeather.Scheduler
                 {
                     //elasticConnection.DeleteIndex(configuration.ElasticIndexName);
                 }
-                
+
 
                 IFileStorage fileStorage = new FileStorage();
                 var storageImpl = fileStorage.Build(configuration);
-                var locationsOpt = await 
+                var locationsOpt = await
                     new LocationFileReader().Build(configuration).ReadConfigurationAsync();
-                
-                
+
+
                 locationsOpt.MatchSome(async locations =>
                 {
-                    var results = locations.Select(async location =>
+                    var results = locations.Select(location =>
                     {
-                        return (await OwmApiReader.ReadDataFromLocationAsync(location, configuration.OwmApiKey))
+                        return OwmApiReader.ReadDataFromLocation(location, configuration.OwmApiKey)
                             .Select(data => JsonSerializer.Deserialize<Root>(data))
                             .Where(element => element != null)
                             .Select(element => element!)
@@ -70,22 +71,11 @@ namespace RegionalWeather.Scheduler
                             .Flatten()
                             .Select(OwmToElasticDocumentConverter.Convert)
                             .ValueOrFailure();
-                            
-                            
-                        // return OwmApiReader.ReadDataFromLocation(location, configuration.OwmApiKey)
-                        //     .Select(data => JsonSerializer.Deserialize<Root>(data))
-                        //     .Where(element => element != null)
-                        //     .Select(element => element!)
-                        //     .Select(element => storageImpl.WriteData(element))
-                        //     .Flatten()
-                        //     .Select(OwmToElasticDocumentConverter.Convert)
-                        //     .ValueOrFailure();
                     });
 
-                    var tasks = await Task.WhenAll(results.ToList());
-                    await elasticConnection.BulkWriteDocumentsAsync(tasks, configuration.ElasticIndexName);
+                    await elasticConnection.BulkWriteDocumentsAsync(results, configuration.ElasticIndexName);
                 });
-               
+
                 storageImpl.FlushData();
                 storageImpl.CloseFileStream();
             });
