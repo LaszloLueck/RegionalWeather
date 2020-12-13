@@ -70,6 +70,27 @@ Also i implement some more things async / awaitable.
 The etl-process is currently mostly synchron / blocking. The reason is, that LINQ is not as much async await compatible as i hoped.
 
 In scala, you can process things with map / flatmap keywords. The handling in c# isn't here so optimal.
+Currently in C# the code for reading / processing / writing / indexing looks like (from SchedulerJob.cs):
+
+```c#
+locationsOpt.MatchSome(async locations =>
+                {
+                    var results = locations.Select(location =>
+                    {
+                        return OwmApiReader.ReadDataFromLocation(location, configuration.OwmApiKey)
+                            .Select(data => JsonSerializer.Deserialize<Root>(data))
+                            .Where(element => element != null)
+                            .Select(element => element!)
+                            .Select(element => storageImpl.WriteData(element))
+                            .Flatten()
+                            .Select(OwmToElasticDocumentConverter.Convert)
+                            .ValueOrFailure();
+                    });
+
+                    await elasticConnection.BulkWriteDocumentsAsync(results, configuration.ElasticIndexName);
+                });
+```
+It´s not so easy to rebuild that async / awaitable. If you see the `JsonSerializer.Deserialize` line. If i rewrite this async, the result is a Task<>. The next line must be a Task-Handler and so on. In Scala the code looks like the above (other syntax ok) and is easy readable.
 
 On the other side, i reimport and reindex approx. 7.000 documents in 2 seconds (read from file, process, write to es).
 
