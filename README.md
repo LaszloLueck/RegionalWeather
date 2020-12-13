@@ -57,6 +57,24 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
+### 2020-12-13 adding rain and gust
+From the owm api documentation i did'nt see that there are parameters for wind.gust and rain (1h / 3h).
+I've added the parameter to the elastic document and put it to the etl process.
+After a remove index / import all the backup files / refresh index pattern we could see some values (see screenshot).
+Damn, no rain for 2 days, rain.1h and rain.3h is always 0. ;)
+
+<img src="images/screenshot_gust.png" width="1024"></img>
+
+Also i implement some more things async / awaitable.
+The etl-process is currently mostly synchron / blocking. The reason is, that LINQ is not as much async await compatible as i hoped.
+In scala, you can process things with map / flatmap keywords.
+The handling in c# isn't so optimal.
+On the other side, i reimport and reindex approx. 7.000 documents in 2 seconds (read from file, process, write to es).
+There are other things more important.
+
+Cheers!
+
+
 ### 2020-12-12 update data handling
 Until now, the data-property for the timeseries index like prometheus or elasticsearch was the field owm.dateTime. But this field represents the timestamp of the last measurement of the location. I decided to reimplement some things, but this makes the, until now, collected data unusuable.
 When i read a dataset for a location i inject and store the current timestamp to the json. This json would be stored in the storage files and would be stored in elastic.
