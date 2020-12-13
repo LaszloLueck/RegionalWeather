@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Elasticsearch.Net;
 using Nest;
 using RegionalWeather.Configuration;
@@ -52,10 +53,28 @@ namespace RegionalWeather.Transport.Elastic
             return ProcessResponse(result);
         }
 
+        public async Task<bool> IndexExistsAsync(string indexName)
+        {
+            await Log.InfoAsync("Check if index exists");
+            var ret = await _elasticClient.Indices.ExistsAsync(indexName);
+            return ProcessResponse(ret);
+        }
+        
         public bool IndexExists(string indexName)
         {
             Log.Info("Check if index exists.");
             return _elasticClient.Indices.Exists(indexName).Exists;
+        }
+
+        public async Task<bool> CreateIndexAsync(string indexName)
+        {
+            await Log.InfoAsync($"Create index {indexName} with Mapping");
+            var result = await _elasticClient
+                .Indices
+                .CreateAsync(indexName, index => index
+                    .Map<WeatherLocationDocument>(x => x.AutoMap()
+                        .Properties(d => d.Date(e => e.Name(en => en.TimeStamp)))));
+            return ProcessResponse(result);
         }
 
         public bool CreateIndex(string indexName)
@@ -78,11 +97,25 @@ namespace RegionalWeather.Transport.Elastic
             return ProcessResponse(result);
         }
 
+        public async Task<bool> DeleteIndexAsync(string indexName)
+        {
+            await Log.InfoAsync($"Delete index {indexName}");
+            var result = await _elasticClient
+                .Indices
+                .DeleteAsync(indexName);
+            return ProcessResponse(result);
+        }
+
         private bool ProcessResponse<T>(T response)
         {
             
             switch (response)
             {
+                case ExistsResponse existsResponse:
+                    if (existsResponse.IsValid) return existsResponse.Exists;
+                    Log.Warning(existsResponse.DebugInformation);
+                    Log.Error(existsResponse.OriginalException, existsResponse.ServerError.Error.Reason);
+                    return existsResponse.Exists;
                 case DeleteIndexResponse deleteIndexResponse :
                     if (deleteIndexResponse.Acknowledged) return deleteIndexResponse.Acknowledged;
                     Log.Warning(deleteIndexResponse.DebugInformation);

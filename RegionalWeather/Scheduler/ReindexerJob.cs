@@ -23,7 +23,8 @@ namespace RegionalWeather.Scheduler
                 await Log.InfoAsync("Check if any reindex job todo.");
                 if (!Directory.Exists(configuration.ReindexLookupPath))
                 {
-                    await Log.WarningAsync("Reindex lookup directory does not exist. Finished funcion!");
+                    await Log.WarningAsync("Reindex lookup directory does not exist. Lets create it");
+                    Directory.CreateDirectory(configuration.ReindexLookupPath);
                 }
                 else
                 {
@@ -32,9 +33,9 @@ namespace RegionalWeather.Scheduler
                         new ElasticConnectionBuilder();
                     var elasticConnection = connectionBuilder.Build(configuration);
 
-                    if (!elasticConnection.IndexExists(configuration.ElasticIndexName))
+                    if (!await elasticConnection.IndexExistsAsync(configuration.ElasticIndexName))
                     {
-                        if (elasticConnection.CreateIndex(configuration.ElasticIndexName))
+                        if (await elasticConnection.CreateIndexAsync(configuration.ElasticIndexName))
                         {
                             await Log.InfoAsync($"index {configuration.ElasticIndexName} successfully created");
                         }

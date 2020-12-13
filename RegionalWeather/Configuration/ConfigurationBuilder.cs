@@ -1,4 +1,5 @@
 ﻿#pragma warning disable
+using System.Threading.Tasks;
 using Optional;
 using Optional.Linq;
 using RegionalWeather.Logging;
@@ -33,6 +34,12 @@ namespace RegionalWeather.Configuration
         {
             _configurationFactory = configurationFactory;
         }
+
+        public async Task<Option<ConfigurationItems>> GetConfigurationAsync()
+        {
+            return await Task.Run(GetConfiguration);
+        }
+        
 
         public Option<ConfigurationItems> GetConfiguration()
         {

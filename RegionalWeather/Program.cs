@@ -23,17 +23,15 @@ namespace RegionalWeather
 
             IConfigurationFactory configurationFactory = new ConfigurationFactory();
 
-            var mainTask = (from configuration in new ConfigurationBuilder(configurationFactory).GetConfiguration()
-                from locations in new LocationFileReader().Build(configuration).ReadConfiguration()
-                select new Tuple<ConfigurationItems, List<string>>(configuration, locations)).Map(tpl =>
+            var mainTask = (await new ConfigurationBuilder(configurationFactory).GetConfigurationAsync()).Select(configuration =>
             {
                 Task.Run(async () => {
                     await Log.InfoAsync("Build up the scheduler");
                     ISchedulerFactory schedulerFactory =
-                        new CustomSchedulerFactory<SchedulerJob>("job1", "group1", "trigger1", tpl.Item1, tpl.Item2);
+                        new CustomSchedulerFactory<SchedulerJob>("job1", "group1", "trigger1", configuration);
 
                     ISchedulerFactory reindexerFactory =
-                        new ReindexerFactory<ReindexerJob>("reindexJob", "reindexGroup", "reindexTrigger", tpl.Item1);
+                        new ReindexerFactory<ReindexerJob>("reindexJob", "reindexGroup", "reindexTrigger", configuration);
 
                     await reindexerFactory.RunScheduler();
                     await schedulerFactory.RunScheduler();

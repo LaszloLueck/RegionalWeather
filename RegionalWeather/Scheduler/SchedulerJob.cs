@@ -9,6 +9,7 @@ using Optional.Unsafe;
 using Quartz;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
+using RegionalWeather.FileRead;
 using RegionalWeather.Filestorage;
 using RegionalWeather.Logging;
 using RegionalWeather.Owm;
@@ -24,7 +25,6 @@ namespace RegionalWeather.Scheduler
         public async Task Execute(IJobExecutionContext context)
         {
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
-            var locations = (List<string>) context.JobDetail.JobDataMap["locations"];
             await Task.Run(async () =>
             {
                 await Log.InfoAsync("Use the following parameter for connections:");
@@ -36,9 +36,9 @@ namespace RegionalWeather.Scheduler
                     new ElasticConnectionBuilder();
                 var elasticConnection = connectionBuilder.Build(configuration);
 
-                if (!elasticConnection.IndexExists(configuration.ElasticIndexName))
+                if (!await elasticConnection.IndexExistsAsync(configuration.ElasticIndexName))
                 {
-                    if (elasticConnection.CreateIndex(configuration.ElasticIndexName))
+                    if (await elasticConnection.CreateIndexAsync(configuration.ElasticIndexName))
                     {
                         await Log.InfoAsync($"index {configuration.ElasticIndexName} successfully created");
                     }
@@ -55,23 +55,26 @@ namespace RegionalWeather.Scheduler
 
                 IFileStorage fileStorage = new FileStorage();
                 var storageImpl = fileStorage.Build(configuration);
-                var dataReader = new OwmApiReader();
+                var locationsOpt = await 
+                    new LocationFileReader().Build(configuration).ReadConfigurationAsync();
                 
-                var locationsWeather = locations.Select(location =>
+                
+                locationsOpt.MatchSome(locations =>
                 {
-                    return OwmApiReader.ReadDataFromLocation(location, configuration.OwmApiKey)
-                        .Select(data => JsonSerializer.Deserialize<Root>(data))
-                        .Where(element => element != null)
-                        .Select(element => element!)
-                        .Select(element => storageImpl.WriteData(element))
-                        .Flatten()
-                        .Select(OwmToElasticDocumentConverter.Convert)
-                        .ValueOrFailure();
+                    var results = locations.Select(location =>
+                    {
+                        return OwmApiReader.ReadDataFromLocation(location, configuration.OwmApiKey)
+                            .Select(data => JsonSerializer.Deserialize<Root>(data))
+                            .Where(element => element != null)
+                            .Select(element => element!)
+                            .Select(element => storageImpl.WriteData(element))
+                            .Flatten()
+                            .Select(OwmToElasticDocumentConverter.Convert)
+                            .ValueOrFailure();
+                    });
+                    elasticConnection.BulkWriteDocument(results, configuration.ElasticIndexName);
                 });
-
-
-                elasticConnection.BulkWriteDocument(locationsWeather, configuration.ElasticIndexName);
-                
+               
                 storageImpl.FlushData();
                 storageImpl.CloseFileStream();
             });
