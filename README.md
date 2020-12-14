@@ -57,6 +57,37 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
+### 2020-12-14 finished refactoring async / await
+Last night i had the idea, how to solve the challenge with async / await and linq.
+I redesigned or reorder the etl-process. The described method for that looks now:
+
+```c#
+locationsOpt.MatchSome(async locations =>
+                {
+                    var results = locations.Select(location =>
+                    {
+                        return OwmApiReader.ReadDataFromLocation(location, configuration.OwmApiKey)
+                            .Select(data => JsonSerializer.Deserialize<Root>(data))
+                            .Where(element => element != null)
+                            .Select(element => element!)
+                            .ValueOrFailure();
+                    });
+
+
+                    var resultTasks = results.Select(async root =>
+                    {
+                        await storageImpl.WriteDataAsync(root);
+                        return await OwmToElasticDocumentConverter.ConvertAsync(root);
+                    });
+                    var ts = await Task.WhenAll(resultTasks);
+                    await elasticConnection.BulkWriteDocumentsAsync(ts, configuration.ElasticIndexName);
+                });
+
+```
+
+First i read that and convert it to the to. Then i write the doc to file, convert it as elastic doc and write the ienumerable<ElasticDoc> to elastic.
+  
+
 ### 2020-12-13 adding rain and gust
 From the owm api documentation i did'nt see that there are parameters for wind.gust and rain (1h / 3h).
 I've added the parameter to the elastic document and put it to the etl process.
