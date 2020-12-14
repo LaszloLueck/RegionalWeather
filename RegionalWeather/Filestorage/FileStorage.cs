@@ -39,7 +39,7 @@ namespace RegionalWeather.Filestorage
         
         public async void CloseFileStreamAsync()
         {
-            _sw.Close();
+            //_sw.Close();
             await _sw.DisposeAsync();
         }
         
