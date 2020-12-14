@@ -48,24 +48,27 @@ namespace RegionalWeather.Scheduler
 
                     (from file in files select file)
                         .ToList()
-                        .ForEach(file =>
+                        .ForEach(async file =>
                         {
-                            Log.Info($"Backup Data from file {file}");
-                            File.ReadAllLines(file)
+                            await Log.InfoAsync($"Backup Data from file {file}");
+                            var elements = (await File.ReadAllLinesAsync(file))
                                 .Select(loc => JsonSerializer.Deserialize<Root>(loc))
                                 .Where(element => element != null)
-                                .Select(element => element!)
-                                .Select(OwmToElasticDocumentConverter.Convert)
+                                .Select(element => element!);
+
+
+                            var fp = elements.Select(async element =>
+                                await OwmToElasticDocumentConverter.ConvertAsync(element));
+
+                            (await Task.WhenAll(fp))
                                 .Select((owm, index) => new {owm, index})
                                 .GroupBy(g => g.index / 100, o => o.owm)
                                 .ToList()
-                                .ForEach(k =>
-                                    elasticConnection.BulkWriteDocuments(k, configuration.ElasticIndexName));
-
-                            Log.Info($"Remove the file <{file}> after indexing");
+                                .ForEach(async k =>
+                                    await elasticConnection.BulkWriteDocumentsAsync(k, configuration.ElasticIndexName));
+                            await Log.InfoAsync($"Remove the file <{file}> after indexing");
                             File.Delete(file);
                         });
-
                 }
             });
         }

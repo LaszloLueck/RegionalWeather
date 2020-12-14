@@ -67,17 +67,21 @@ namespace RegionalWeather.Scheduler
                             .Select(data => JsonSerializer.Deserialize<Root>(data))
                             .Where(element => element != null)
                             .Select(element => element!)
-                            .Select(element => storageImpl.WriteData(element))
-                            .Flatten()
-                            .Select(OwmToElasticDocumentConverter.Convert)
                             .ValueOrFailure();
                     });
 
-                    await elasticConnection.BulkWriteDocumentsAsync(results, configuration.ElasticIndexName);
+
+                    var resultTasks = results.Select(async root =>
+                    {
+                        await storageImpl.WriteDataAsync(root);
+                        return await OwmToElasticDocumentConverter.ConvertAsync(root);
+                    });
+                    var ts = await Task.WhenAll(resultTasks);
+                    await elasticConnection.BulkWriteDocumentsAsync(ts, configuration.ElasticIndexName);
                 });
 
-                storageImpl.FlushData();
-                storageImpl.CloseFileStream();
+                storageImpl.FlushDataAsync();
+                storageImpl.CloseFileStreamAsync();
             });
         }
     }

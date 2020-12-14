@@ -3,7 +3,6 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Optional;
 using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
 using RegionalWeather.Owm;
@@ -33,18 +32,19 @@ namespace RegionalWeather.Filestorage
             _sw = new StreamWriter(filename, true);
         }
 
-        public void FlushData()
+        public async void FlushDataAsync()
         {
-            _sw.Flush();
+            await _sw.FlushAsync();
         }
-
-        public void CloseFileStream()
+        
+        public async void CloseFileStreamAsync()
         {
             _sw.Close();
-            _sw.Dispose();
+            await _sw.DisposeAsync();
         }
+        
 
-        public async Task<Root> WriteDataAsync(Root sourceObject)
+        public async Task WriteDataAsync(Root sourceObject)
         {
             try
             {
@@ -53,31 +53,12 @@ namespace RegionalWeather.Filestorage
                 await JsonSerializer.SerializeAsync(str, sourceObject, sourceObject.GetType());
                 str.Position = 0;
                 await _sw.WriteLineAsync(await new StreamReader(str).ReadToEndAsync());
-                return sourceObject;
             }
             catch (Exception exception)
             {
                 await Log.ErrorAsync(exception, "Error while writing data to file!");
-                return await Task.Run(() => sourceObject);
+                await Task.Run(() => sourceObject);
             }
         }
-        
-
-        public Option<Root> WriteData(Root sourceObject)
-        {
-            try
-            {
-                sourceObject.ReadTime = DateTime.Now;
-                var data = JsonSerializer.Serialize(sourceObject);   
-                _sw.WriteLine(data);
-                return Option.Some(sourceObject);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error while writing data to file");
-                return Option.None<Root>();
-            }
-        }
-        
     }
 }

@@ -12,7 +12,7 @@ namespace RegionalWeather.Elastic
             return await Task.Run(() => Convert(owmDoc));
         }
 
-        public static WeatherLocationDocument Convert(Root owmDoc)
+        private static WeatherLocationDocument Convert(Root owmDoc)
         {
             var etl = new WeatherLocationDocument {Id = Guid.NewGuid()};
 

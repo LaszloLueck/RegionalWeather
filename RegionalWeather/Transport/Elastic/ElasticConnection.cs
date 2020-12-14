@@ -40,24 +40,11 @@ namespace RegionalWeather.Transport.Elastic
             _elasticClient = new ElasticClient(setting);
         }
 
-        public bool WriteDocument<T>(T document, string indexName) where T : WeatherLocationDocument
-        {
-            Log.Info($"Write Document {document.LocationId}");
-            var result = _elasticClient.Index(document, i => i.Index(indexName));
-            return ProcessResponse(result);
-        }
-
-        public bool BulkWriteDocuments<T>(IEnumerable<T> documents, string indexName) where T : WeatherLocationDocument
-        {
-            var result = _elasticClient.IndexMany(documents, indexName);
-            return ProcessResponse(result);
-        }
-
-        public async Task<bool> BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
+        public async Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
             where T : WeatherLocationDocument
         {
             var result = await _elasticClient.IndexManyAsync(documents, indexName);
-            return ProcessResponse(result);
+            ProcessResponse(result);
         }
 
         public async Task<bool> IndexExistsAsync(string indexName)
@@ -65,12 +52,6 @@ namespace RegionalWeather.Transport.Elastic
             await Log.InfoAsync("Check if index exists");
             var ret = await _elasticClient.Indices.ExistsAsync(indexName);
             return ret.Exists;
-        }
-        
-        public bool IndexExists(string indexName)
-        {
-            Log.Info("Check if index exists.");
-            return _elasticClient.Indices.Exists(indexName).Exists;
         }
 
         public async Task<bool> CreateIndexAsync(string indexName)
@@ -84,26 +65,6 @@ namespace RegionalWeather.Transport.Elastic
             return ProcessResponse(result);
         }
 
-        public bool CreateIndex(string indexName)
-        {
-            Log.Info($"Create index {indexName} with Mapping");
-            var result = _elasticClient
-                .Indices
-                .Create(indexName, index => index
-                    .Map<WeatherLocationDocument>(x => x.AutoMap()
-                        .Properties(d => d.Date(e=>e.Name(en => en.TimeStamp)))));
-            return ProcessResponse(result);
-        }
-
-        public bool DeleteIndex(string indexName)
-        {
-            Log.Info($"Delete index {indexName}");
-            var result = _elasticClient
-                .Indices.Delete(indexName);
-
-            return ProcessResponse(result);
-        }
-
         public async Task<bool> DeleteIndexAsync(string indexName)
         {
             await Log.InfoAsync($"Delete index {indexName}");
@@ -113,7 +74,7 @@ namespace RegionalWeather.Transport.Elastic
             return ProcessResponse(result);
         }
 
-        private bool ProcessResponse<T>(T response)
+        private static bool ProcessResponse<T>(T response)
         {
             
             switch (response)
