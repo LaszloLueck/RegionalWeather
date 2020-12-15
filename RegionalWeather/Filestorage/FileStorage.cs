@@ -32,15 +32,15 @@ namespace RegionalWeather.Filestorage
             _sw = new StreamWriter(filename, true);
         }
 
-        public async void FlushDataAsync()
+        public Task FlushDataAsync()
         {
-            await _sw.FlushAsync();
+            return _sw.FlushAsync();
         }
         
-        public async void CloseFileStreamAsync()
+        public ValueTask CloseFileStreamAsync()
         {
             //_sw.Close();
-            await _sw.DisposeAsync();
+            return _sw.DisposeAsync();
         }
         
 

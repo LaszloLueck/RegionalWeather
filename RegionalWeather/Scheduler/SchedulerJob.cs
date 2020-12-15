@@ -80,8 +80,10 @@ namespace RegionalWeather.Scheduler
                     await elasticConnection.BulkWriteDocumentsAsync(ts, configuration.ElasticIndexName);
                 });
 
-                storageImpl.FlushDataAsync();
-                storageImpl.CloseFileStreamAsync();
+
+                await storageImpl.FlushDataAsync();
+                await storageImpl.CloseFileStreamAsync();
+
             });
         }
     }
