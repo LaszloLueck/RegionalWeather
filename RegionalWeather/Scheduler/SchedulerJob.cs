@@ -1,9 +1,9 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Optional;
 using Optional.Linq;
 using Optional.Unsafe;
 using Quartz;
@@ -25,6 +25,8 @@ namespace RegionalWeather.Scheduler
         public async Task Execute(IJobExecutionContext context)
         {
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
+            IFileStorage fileStorage = new FileStorage();
+            var storageImpl = fileStorage.Build(configuration);
             await Task.Run(async () =>
             {
                 await Log.InfoAsync("Use the following parameter for connections:");
@@ -52,38 +54,30 @@ namespace RegionalWeather.Scheduler
                     //elasticConnection.DeleteIndex(configuration.ElasticIndexName);
                 }
 
-
-                IFileStorage fileStorage = new FileStorage();
-                var storageImpl = fileStorage.Build(configuration);
-                var locationsOpt = await
-                    new LocationFileReader().Build(configuration).ReadConfigurationAsync();
-
-
-                locationsOpt.MatchSome(async locations =>
+                var lo =
+                    (await new LocationFileReader().Build(configuration).ReadConfigurationAsync()).ValueOr(
+                        new List<string>());
+                var rootTasks = lo.Select(async location =>
                 {
-                    var results = locations.Select(location =>
-                    {
-                        return OwmApiReader.ReadDataFromLocation(location, configuration.OwmApiKey)
-                            .Select(data => JsonSerializer.Deserialize<Root>(data))
-                            .Where(element => element != null)
-                            .Select(element => element!)
-                            .ValueOrFailure();
-                    });
+                    var root = (await OwmApiReader.ReadDataFromLocationAsync(location, configuration.OwmApiKey))
+                        .Select(data => JsonSerializer.Deserialize<Root>(data))
+                        .Where(element => element != null)
+                        .Select(element => element!)
+                        .Select(element =>
+                        {
+                            element.ReadTime = DateTime.Now;
+                            return element;
+                        })
+                        .ValueOrFailure();
 
-
-                    var resultTasks = results.Select(async root =>
-                    {
-                        await storageImpl.WriteDataAsync(root);
-                        return await OwmToElasticDocumentConverter.ConvertAsync(root);
-                    });
-                    var ts = await Task.WhenAll(resultTasks);
-                    await elasticConnection.BulkWriteDocumentsAsync(ts, configuration.ElasticIndexName);
+                    return root;
                 });
 
-
-                await storageImpl.FlushDataAsync();
-                await storageImpl.CloseFileStreamAsync();
-
+                var toElastic = await Task.WhenAll(rootTasks);
+                await storageImpl.WriteAllDataAsync(toElastic);
+                var elasticDocs =
+                    await Task.WhenAll(toElastic.Select(async root => await OwmToElasticDocumentConverter.ConvertAsync(root)));
+                await elasticConnection.BulkWriteDocumentsAsync(elasticDocs, configuration.ElasticIndexName);
             });
         }
     }

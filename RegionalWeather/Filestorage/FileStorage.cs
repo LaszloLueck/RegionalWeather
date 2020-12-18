@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -25,40 +27,30 @@ namespace RegionalWeather.Filestorage
     public class FileStorageImpl
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<FileStorageImpl>.GetLogger();
-        private readonly StreamWriter _sw;
+        private readonly string _storageFilePath;
         public FileStorageImpl(ConfigurationItems configurationItems)
         {
             var filename = configurationItems.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
-            _sw = new StreamWriter(filename, true);
+            _storageFilePath = filename;
         }
 
-        public Task FlushDataAsync()
+        public async Task WriteAllDataAsync(IEnumerable<Root> roots)
         {
-            return _sw.FlushAsync();
-        }
-        
-        public ValueTask CloseFileStreamAsync()
-        {
-            //_sw.Close();
-            return _sw.DisposeAsync();
-        }
-        
-
-        public async Task WriteDataAsync(Root sourceObject)
-        {
-            try
+            await Task.Run(async () =>
             {
-                sourceObject.ReadTime = DateTime.Now;
-                var str = new MemoryStream();
-                await JsonSerializer.SerializeAsync(str, sourceObject, sourceObject.GetType());
-                str.Position = 0;
-                await _sw.WriteLineAsync(await new StreamReader(str).ReadToEndAsync());
-            }
-            catch (Exception exception)
-            {
-                await Log.ErrorAsync(exception, "Error while writing data to file!");
-                await Task.Run(() => sourceObject);
-            }
+                await using StreamWriter streamWriter = new StreamWriter(_storageFilePath, true, Encoding.UTF8, 8192);
+                var enumerable = roots.ToList();
+                enumerable.ToList().ForEach(async root =>
+                {
+                    await using MemoryStream str = new MemoryStream();
+                    await JsonSerializer.SerializeAsync(str, root, root.GetType());
+                    str.Position = 0;
+                    await streamWriter.WriteLineAsync(await new StreamReader(str).ReadToEndAsync());
+                });
+                await Log.InfoAsync($"Successfully write {enumerable.Count} lines to file");
+                await streamWriter.FlushAsync();
+                await streamWriter.DisposeAsync();
+            });
         }
     }
 }

@@ -72,8 +72,21 @@ namespace RegionalWeather.Elastic
                 rain.ThreeHour = 0;
             }
             
-            
             etl.Rain = rain;
+
+            var snow = new Snow();
+            if (owmDoc.Snow != null)
+            {
+                snow.OneHour = owmDoc.Snow.OneHour;
+                snow.ThreeHour = owmDoc.Snow.ThreeHour;
+            }
+            else
+            {
+                snow.OneHour = 0;
+                snow.ThreeHour = 0;
+            }
+
+            etl.Snow = snow;
             
             etl.LocationId = owmDoc.Id;
             etl.LocationName = owmDoc.Name;

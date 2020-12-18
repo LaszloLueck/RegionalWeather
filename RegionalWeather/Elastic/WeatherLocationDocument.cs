@@ -19,6 +19,8 @@ namespace RegionalWeather.Elastic
         
         public Rain Rain { get; set; }
         
+        public Snow Snow { get; set; }
+        
         public GeoLocation GeoLocation { get; set; }
          
     }
