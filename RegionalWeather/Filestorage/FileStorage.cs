@@ -38,7 +38,7 @@ namespace RegionalWeather.Filestorage
         {
             await Task.Run(async () =>
             {
-                await using StreamWriter streamWriter = new StreamWriter(_storageFilePath, true, Encoding.UTF8, 8192);
+                await using StreamWriter streamWriter = new StreamWriter(_storageFilePath, true, Encoding.UTF8, 32768);
                 var enumerable = roots.ToList();
                 enumerable.ToList().ForEach(async root =>
                 {
