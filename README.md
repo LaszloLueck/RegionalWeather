@@ -57,7 +57,16 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
-### 2020-12-14 finished refactoring async / await
+### 2020-12-14 Next step of async / await - Part 2
+For now i am 2 steps away from complete refactoring. First is the call, who get the current weatherinformations of a location
+- OwmApiReader.ReadDataFromLocation
+
+and the second part is the transform of the json to an appropriate object
+- JsonSerializer.Deserialize
+
+Let´s do this!
+
+### 2020-12-14 finished refactoring async / await - Part 1
 Last night i had the idea, how to solve the challenge with async / await and linq.
 I redesigned or reorder the etl-process. The described method for that looks now:
 
