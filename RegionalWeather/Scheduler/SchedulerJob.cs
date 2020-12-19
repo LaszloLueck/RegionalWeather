@@ -56,11 +56,11 @@ namespace RegionalWeather.Scheduler
                     //elasticConnection.DeleteIndex(configuration.ElasticIndexName);
                 }
 
-                var lo =
+                var locationList =
                     (await new LocationFileReader().Build(configuration).ReadConfigurationAsync()).ValueOr(
                         new List<string>());
 
-                var rootTasksOption = lo.Select(async location =>
+                var rootTasksOption = locationList.Select(async location =>
                     await OwmApiReader.ReadDataFromLocationAsync(location, configuration.OwmApiKey));
 
                 var rootStrings = (await Task.WhenAll(rootTasksOption)).Values();
@@ -72,10 +72,10 @@ namespace RegionalWeather.Scheduler
                         item.ReadTime = DateTime.Now;
                         return item!;
                     });
-                var t = new ConcurrentBag<Root>(toElastic);
-                await storageImpl.WriteAllDataAsync(t);
+                var concurrentBag = new ConcurrentBag<Root>(toElastic);
+                await storageImpl.WriteAllDataAsync(concurrentBag);
                 var elasticDocs =
-                    await Task.WhenAll(t.Select(async root =>
+                    await Task.WhenAll(concurrentBag.Select(async root =>
                         await OwmToElasticDocumentConverter.ConvertAsync(root)));
                 await elasticConnection.BulkWriteDocumentsAsync(elasticDocs, configuration.ElasticIndexName);
             });
