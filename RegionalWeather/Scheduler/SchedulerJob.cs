@@ -1,11 +1,13 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Optional.Linq;
-using Optional.Unsafe;
+using Optional.Collections;
 using Quartz;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
@@ -57,28 +59,35 @@ namespace RegionalWeather.Scheduler
                 var lo =
                     (await new LocationFileReader().Build(configuration).ReadConfigurationAsync()).ValueOr(
                         new List<string>());
-                var rootTasks = lo.Select(async location =>
-                {
-                    var root = (await OwmApiReader.ReadDataFromLocationAsync(location, configuration.OwmApiKey))
-                        .Select(data => JsonSerializer.Deserialize<Root>(data))
-                        .Where(element => element != null)
-                        .Select(element => element!)
-                        .Select(element =>
-                        {
-                            element.ReadTime = DateTime.Now;
-                            return element;
-                        })
-                        .ValueOrFailure();
 
-                    return root;
-                });
+                var rootTasksOption = lo.Select(async location =>
+                    await OwmApiReader.ReadDataFromLocationAsync(location, configuration.OwmApiKey));
 
-                var toElastic = await Task.WhenAll(rootTasks);
-                await storageImpl.WriteAllDataAsync(toElastic);
+                var rootStrings = (await Task.WhenAll(rootTasksOption)).Values();
+                var toElastic = (await Task.WhenAll(rootStrings.Select(async str => await DeserializeObjectAsync(str))))
+                    .Where(item => item != null)
+                    .Select(itemNullable =>
+                    {
+                        var item = itemNullable!;
+                        item.ReadTime = DateTime.Now;
+                        return item!;
+                    });
+                var t = new ConcurrentBag<Root>(toElastic);
+                await storageImpl.WriteAllDataAsync(t);
                 var elasticDocs =
-                    await Task.WhenAll(toElastic.Select(async root => await OwmToElasticDocumentConverter.ConvertAsync(root)));
+                    await Task.WhenAll(t.Select(async root =>
+                        await OwmToElasticDocumentConverter.ConvertAsync(root)));
                 await elasticConnection.BulkWriteDocumentsAsync(elasticDocs, configuration.ElasticIndexName);
             });
+        }
+
+        private static async ValueTask<Root?> DeserializeObjectAsync(string data)
+        {
+            await using MemoryStream stream = new();
+            var bt = Encoding.UTF8.GetBytes(data);
+            await stream.WriteAsync(bt.AsMemory(0, bt.Length));
+            stream.Position = 0;
+            return await JsonSerializer.DeserializeAsync<Root>(stream);
         }
     }
 }
