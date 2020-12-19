@@ -57,6 +57,39 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
+### 2020-12-19 Stick this all together
+Now, all the stuff in SchedulerJob works complete async / awaitable.
+```c#
+                var locationList =
+                    (await new LocationFileReader().Build(configuration).ReadConfigurationAsync()).ValueOr(
+                        new List<string>());
+
+                var rootTasksOption = locationList.Select(async location =>
+                    await OwmApiReader.ReadDataFromLocationAsync(location, configuration.OwmApiKey));
+
+                var rootStrings = (await Task.WhenAll(rootTasksOption)).Values();
+                var toElastic = (await Task.WhenAll(rootStrings.Select(async str => await DeserializeObjectAsync(str))))
+                    .Where(item => item != null)
+                    .Select(itemNullable =>
+                    {
+                        var item = itemNullable!;
+                        item.ReadTime = DateTime.Now;
+                        return item!;
+                    });
+                var concurrentBag = new ConcurrentBag<Root>(toElastic);
+                await storageImpl.WriteAllDataAsync(concurrentBag);
+                var elasticDocs =
+                    await Task.WhenAll(concurrentBag.Select(async root =>
+                        await OwmToElasticDocumentConverter.ConvertAsync(root)));
+                await elasticConnection.BulkWriteDocumentsAsync(elasticDocs, configuration.ElasticIndexName);
+```
+
+It looks not as beautyful as the sync version but, anyway...
+
+...now it´s modern not aesthetic.
+
+Cheers!
+
 ### 2020-12-14 Next step of async / await - Part 2
 For now i am 2 steps away from complete refactoring. First is the call, who get the current weatherinformations of a location
 - OwmApiReader.ReadDataFromLocation
