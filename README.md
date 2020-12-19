@@ -89,6 +89,18 @@ It looks not as beautyful as the sync version but, anyway...
 ...now it´s modern not aesthetic.
 
 Cheers!
+Aaaah, and here is the one that convert async / await a string to an object (JsonDeserialize).
+```c#
+        private static async ValueTask<Root?> DeserializeObjectAsync(string data)
+        {
+            await using MemoryStream stream = new();
+            var bt = Encoding.UTF8.GetBytes(data);
+            await stream.WriteAsync(bt.AsMemory(0, bt.Length));
+            stream.Position = 0;
+            return await JsonSerializer.DeserializeAsync<Root>(stream);
+        }
+```
+
 
 ### 2020-12-14 Next step of async / await - Part 2
 For now i am 2 steps away from complete refactoring. First is the call, who get the current weatherinformations of a location
