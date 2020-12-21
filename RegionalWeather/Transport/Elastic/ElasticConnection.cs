@@ -44,7 +44,7 @@ namespace RegionalWeather.Transport.Elastic
             where T : WeatherLocationDocument
         {
             var result = await _elasticClient.IndexManyAsync(documents, indexName);
-            ProcessResponse(result);
+            await ProcessResponse(result);
         }
 
         public async Task<bool> IndexExistsAsync(string indexName)
@@ -62,7 +62,7 @@ namespace RegionalWeather.Transport.Elastic
                 .CreateAsync(indexName, index => index
                     .Map<WeatherLocationDocument>(x => x.AutoMap()
                         .Properties(d => d.Date(e => e.Name(en => en.TimeStamp)))));
-            return ProcessResponse(result);
+            return await ProcessResponse(result);
         }
 
         public async Task<bool> DeleteIndexAsync(string indexName)
@@ -71,40 +71,40 @@ namespace RegionalWeather.Transport.Elastic
             var result = await _elasticClient
                 .Indices
                 .DeleteAsync(indexName);
-            return ProcessResponse(result);
+            return await ProcessResponse(result);
         }
 
-        private static bool ProcessResponse<T>(T response)
+        private static async Task<bool> ProcessResponse<T>(T response)
         {
             
             switch (response)
             {
                 case DeleteIndexResponse deleteIndexResponse :
                     if (deleteIndexResponse.Acknowledged) return deleteIndexResponse.Acknowledged;
-                    Log.Warning(deleteIndexResponse.DebugInformation);
-                    Log.Error(deleteIndexResponse.OriginalException, deleteIndexResponse.ServerError.Error.Reason);
+                    await Log.WarningAsync(deleteIndexResponse.DebugInformation);
+                    await Log.ErrorAsync(deleteIndexResponse.OriginalException, deleteIndexResponse.ServerError.Error.Reason);
                     return deleteIndexResponse.Acknowledged;
                 case IndexResponse indexResponse:
                     if (indexResponse.IsValid) return indexResponse.IsValid;
-                    Log.Warning(indexResponse.DebugInformation);
-                    Log.Error(indexResponse.OriginalException, indexResponse.ServerError.Error.Reason);
+                    await Log.WarningAsync(indexResponse.DebugInformation);
+                    await Log.ErrorAsync(indexResponse.OriginalException, indexResponse.ServerError.Error.Reason);
                     return indexResponse.IsValid;
                 case CreateIndexResponse createIndexResponse:
                     if (createIndexResponse.IsValid) return createIndexResponse.IsValid;
-                    Log.Warning(createIndexResponse.DebugInformation);
-                    Log.Error(createIndexResponse.OriginalException, createIndexResponse.ServerError.Error.Reason);
+                    await Log.WarningAsync(createIndexResponse.DebugInformation);
+                    await Log.ErrorAsync(createIndexResponse.OriginalException, createIndexResponse.ServerError.Error.Reason);
                     return createIndexResponse.IsValid;
                 case BulkResponse bulkResponse:
                     if (bulkResponse.IsValid)
                     {
-                        Log.Info($"Successfully write {bulkResponse.Items.Count} documents to elastic");
+                        await Log.InfoAsync($"Successfully write {bulkResponse.Items.Count} documents to elastic");
                         return bulkResponse.IsValid;
                     }
-                    Log.Warning(bulkResponse.DebugInformation);
-                    Log.Error(bulkResponse.OriginalException, bulkResponse.ServerError.Error.Reason);
+                    await Log.WarningAsync(bulkResponse.DebugInformation);
+                    await Log.ErrorAsync(bulkResponse.OriginalException, bulkResponse.ServerError.Error.Reason);
                     return bulkResponse.IsValid;
                 default:
-                    Log.Warning($"Cannot find Conversion for type <{response.GetType().Name}>");
+                    await Log.WarningAsync($"Cannot find Conversion for type <{response.GetType().Name}>");
                     return false;
             }
         }

@@ -60,10 +60,13 @@ namespace RegionalWeather.Scheduler
                     (await new LocationFileReader().Build(configuration).ReadConfigurationAsync()).ValueOr(
                         new List<string>());
 
-                var rootTasksOption = locationList.Select(async location =>
-                    await OwmApiReader.ReadDataFromLocationAsync(location, configuration.OwmApiKey));
+                var rootTasksOption = ConvertToParallelQuery<string>(locationList, configuration.Parallelism)
+                    .Select(async location =>
+                        await OwmApiReader.ReadDataFromLocationAsync(location, configuration.OwmApiKey));
 
-                var rootStrings = (await Task.WhenAll(rootTasksOption)).Values();
+                var rootStrings = ConvertToParallelQuery<string>((await Task.WhenAll(rootTasksOption)).Values(),
+                    configuration.Parallelism);
+
                 var toElastic = (await Task.WhenAll(rootStrings.Select(async str => await DeserializeObjectAsync(str))))
                     .Where(item => item != null)
                     .Select(itemNullable =>
@@ -74,12 +77,22 @@ namespace RegionalWeather.Scheduler
                     });
                 var concurrentBag = new ConcurrentBag<Root>(toElastic);
                 await storageImpl.WriteAllDataAsync(concurrentBag);
+                
                 var elasticDocs =
-                    await Task.WhenAll(concurrentBag.Select(async root =>
-                        await OwmToElasticDocumentConverter.ConvertAsync(root)));
+                    await Task.WhenAll(ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
+                        .Select(async root =>
+                            await OwmToElasticDocumentConverter.ConvertAsync(root)));
                 await elasticConnection.BulkWriteDocumentsAsync(elasticDocs, configuration.ElasticIndexName);
             });
         }
+
+        private static ParallelQuery<T> ConvertToParallelQuery<T>(IEnumerable<T> queryable, int parallelism)
+        {
+            return queryable
+                .AsParallel()
+                .WithDegreeOfParallelism(parallelism);
+        }
+
 
         private static async ValueTask<Root?> DeserializeObjectAsync(string data)
         {
