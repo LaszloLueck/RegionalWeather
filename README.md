@@ -57,6 +57,11 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
+### 2020-12-21 Parallelism works
+With the configuration setting parallelism, you can set how many parallel tasks process the etl (e.g. read for location, process the data, write to elastic). Currently i set this to 5 on my machine (24 Core / 128 GB RAM HP ML 350 server) and it works like a charm (even with more parallelism), but why, for such a small, short running, process.
+
+
+
 ### 2020-12-19 Stick this all together
 Now, all the stuff in SchedulerJob works complete async / awaitable.
 ```c#
