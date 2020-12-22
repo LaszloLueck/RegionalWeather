@@ -57,6 +57,12 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
+### 2020-12-22 Next things to do
+- Since a few weeks, owm published a new api that presents data about air pollution for a specific place. That looks very nice to archive.
+- I have many space on my server @home. Time to build a dockerized version of wordpress to open up a presentational site for this project. That would be also a place to describe, why i wrote the code as i did it in this project, with some hints and do´s and dont´s.
+
+Be patient!
+
 ### 2020-12-21 Parallelism works
 With the configuration setting parallelism, you can set how many parallel tasks process the etl (e.g. read for location, process the data, write to elastic). Currently i set this to 5 on my machine (24 Core / 128 GB RAM HP ML 350 server) and it works like a charm (even with more parallelism), but why, for such a small, short running, process.
 
