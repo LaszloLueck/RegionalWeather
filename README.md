@@ -57,6 +57,14 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
+### 2020-12-27 Prerequisits done
+A medium refactoring is done. Now it is relativly easy possible, to implement other data imports to elastic (and store to filesystem).
+Next step is, to import the air polution data within another scheduler (every 1h).
+After that, i promise by my left and right hand, tests and documentation will follow.
+And more dashboards....
+
+Cheers!
+
 ### 2020-12-22 Next things to do
 - Since a few weeks, owm published a new api that presents data about air pollution for a specific place. That looks very nice to archive.
 - I have many space on my server @home. Time to build a dockerized version of wordpress to open up a presentational site for this project. That would be also a place to describe, why i wrote the code as i did it in this project, with some hints and do´s and dont´s.
