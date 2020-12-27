@@ -1,18 +1,31 @@
 using System;
 using System.Threading.Tasks;
 using Nest;
+using Optional;
+using RegionalWeather.Logging;
 using RegionalWeather.Owm;
 
 namespace RegionalWeather.Elastic
 {
-    public static class OwmToElasticDocumentConverter
+    public class OwmToElasticDocumentConverter
     {
-        public static async Task<WeatherLocationDocument> ConvertAsync(Root owmDoc)
+        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<OwmToElasticDocumentConverter>.GetLogger();
+        
+        public async Task<Option<WeatherLocationDocument>> ConvertAsync(Root owmDoc)
         {
-            return await Task.Run(() => Convert(owmDoc));
+            try
+            {
+                var result = await Task.Run(() => Convert(owmDoc));
+                return Option.Some<WeatherLocationDocument>(result);
+            }
+            catch (Exception exception)
+            {
+                await Log.ErrorAsync(exception, "Error while converting to Elastic Document");
+                return Option.None<WeatherLocationDocument>();
+            }
         }
 
-        private static WeatherLocationDocument Convert(Root owmDoc)
+        private WeatherLocationDocument Convert(Root owmDoc)
         {
             var etl = new WeatherLocationDocument {Id = Guid.NewGuid()};
 

@@ -8,7 +8,7 @@ using RegionalWeather.Logging;
 
 namespace RegionalWeather.FileRead
 {
-    interface ILocationFileReader
+    public interface ILocationFileReader
     {
         LocationFileReaderImpl Build(ConfigurationItems configurationItems);
     }

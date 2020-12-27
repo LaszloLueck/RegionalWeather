@@ -1,20 +1,12 @@
 #nullable enable
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
-using Optional.Collections;
 using Quartz;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
 using RegionalWeather.FileRead;
 using RegionalWeather.Filestorage;
 using RegionalWeather.Logging;
-using RegionalWeather.Owm;
+using RegionalWeather.Processing;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
 
@@ -39,68 +31,26 @@ namespace RegionalWeather.Scheduler
                 IElasticConnectionBuilder connectionBuilder =
                     new ElasticConnectionBuilder();
                 var elasticConnection = connectionBuilder.Build(configuration);
+                var locationReader = new LocationFileReader().Build(configuration);
+                var owmReader = new OwmApiReader();
 
-                if (!await elasticConnection.IndexExistsAsync(configuration.ElasticIndexName))
+                var owmConverter = new OwmToElasticDocumentConverter();
+
+                var processor =
+                    new ProcessingBaseCurrentWeatherImpl(elasticConnection, locationReader, owmReader, storageImpl,
+                        owmConverter);
+
+                var elasticIndexSuccess = true;
+                if (!await processor.ElasticIndexExistsAsync(configuration.ElasticIndexName))
                 {
-                    if (await elasticConnection.CreateIndexAsync(configuration.ElasticIndexName))
-                    {
-                        await Log.InfoAsync($"index {configuration.ElasticIndexName} successfully created");
-                    }
-                    else
-                    {
-                        await Log.WarningAsync($"error while create index {configuration.ElasticIndexName}");
-                    }
-                }
-                else
-                {
-                    //elasticConnection.DeleteIndex(configuration.ElasticIndexName);
+                    elasticIndexSuccess = await processor.CreateIndexAsync(configuration.ElasticIndexName);
                 }
 
-                var locationList =
-                    (await new LocationFileReader().Build(configuration).ReadConfigurationAsync()).ValueOr(
-                        new List<string>());
-
-                var rootTasksOption = ConvertToParallelQuery<string>(locationList, configuration.Parallelism)
-                    .Select(async location =>
-                        await OwmApiReader.ReadDataFromLocationAsync(location, configuration.OwmApiKey));
-
-                var rootStrings = ConvertToParallelQuery<string>((await Task.WhenAll(rootTasksOption)).Values(),
-                    configuration.Parallelism);
-
-                var toElastic = (await Task.WhenAll(rootStrings.Select(async str => await DeserializeObjectAsync(str))))
-                    .Where(item => item != null)
-                    .Select(itemNullable =>
-                    {
-                        var item = itemNullable!;
-                        item.ReadTime = DateTime.Now;
-                        return item!;
-                    });
-                var concurrentBag = new ConcurrentBag<Root>(toElastic);
-                await storageImpl.WriteAllDataAsync(concurrentBag);
-                
-                var elasticDocs =
-                    await Task.WhenAll(ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
-                        .Select(async root =>
-                            await OwmToElasticDocumentConverter.ConvertAsync(root)));
-                await elasticConnection.BulkWriteDocumentsAsync(elasticDocs, configuration.ElasticIndexName);
+                if (elasticIndexSuccess)
+                {
+                    await processor.Process(configuration);
+                }
             });
-        }
-
-        private static ParallelQuery<T> ConvertToParallelQuery<T>(IEnumerable<T> queryable, int parallelism)
-        {
-            return queryable
-                .AsParallel()
-                .WithDegreeOfParallelism(parallelism);
-        }
-
-
-        private static async ValueTask<Root?> DeserializeObjectAsync(string data)
-        {
-            await using MemoryStream stream = new();
-            var bt = Encoding.UTF8.GetBytes(data);
-            await stream.WriteAsync(bt.AsMemory(0, bt.Length));
-            stream.Position = 0;
-            return await JsonSerializer.DeserializeAsync<Root>(stream);
         }
     }
 }
