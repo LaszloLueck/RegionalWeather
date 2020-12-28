@@ -25,7 +25,7 @@ namespace RegionalWeather.Processing
             await Task.Run(async () =>
             {
                 var continueWithDirectory = true;
-                if (DirectoryExists(configuration.ReindexLookupPath))
+                if (!DirectoryExists(configuration.ReindexLookupPath))
                 {
                     await Log.WarningAsync("Reindex lookup directory does not exist. Lets create it");
                     continueWithDirectory = CreateDirectory(configuration.ReindexLookupPath);
