@@ -1,5 +1,3 @@
-using System;
-
 namespace RegionalWeather.Elastic
 {
     public class Wind

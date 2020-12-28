@@ -26,12 +26,12 @@ namespace RegionalWeather
                 Task.Run(async () => {
                     await Log.InfoAsync("Build up the scheduler");
                     ISchedulerFactory schedulerFactory =
-                        new CustomSchedulerFactory<SchedulerJob>("job1", "group1", "trigger1", configuration);
+                        new CustomSchedulerFactory<CurrentWeatherSchedulerJob>("job1", "group1", "trigger1", configuration);
 
-                    ISchedulerFactory reindexerFactory =
-                        new ReindexerFactory<ReindexerJob>("reindexJob", "reindexGroup", "reindexTrigger", configuration);
+                    ISchedulerFactory reIndexerFactory =
+                        new ReindexerFactory<ReindexerSchedulerJob>("reindexJob", "reindexGroup", "reindexTrigger", configuration);
 
-                    await reindexerFactory.RunScheduler();
+                    await reIndexerFactory.RunScheduler();
                     await schedulerFactory.RunScheduler();
                     await Log.InfoAsync("App is in running state!");
                 });

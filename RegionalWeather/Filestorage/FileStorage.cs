@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
-using RegionalWeather.Owm;
 
 namespace RegionalWeather.Filestorage
 {
@@ -24,7 +23,12 @@ namespace RegionalWeather.Filestorage
         }
     }
 
-    public class FileStorageImpl
+    public interface IFileStorageImpl
+    {
+        public Task WriteAllDataAsync<T>(IEnumerable<T> roots);
+    }
+
+    public class FileStorageImpl : IFileStorageImpl
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<FileStorageImpl>.GetLogger();
         private readonly string _storageFilePath;
@@ -34,7 +38,7 @@ namespace RegionalWeather.Filestorage
             _storageFilePath = filename;
         }
 
-        public async Task WriteAllDataAsync(IEnumerable<Root> roots)
+        public async Task WriteAllDataAsync<T>(IEnumerable<T> roots)
         {
             await Task.Run(async () =>
             {

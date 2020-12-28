@@ -12,15 +12,15 @@ using RegionalWeather.Transport.Owm;
 
 namespace RegionalWeather.Scheduler
 {
-    public class SchedulerJob : IJob
+    public class CurrentWeatherSchedulerJob : IJob
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<SchedulerJob>.GetLogger();
+        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<CurrentWeatherSchedulerJob>.GetLogger();
 
         public async Task Execute(IJobExecutionContext context)
         {
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
             IFileStorage fileStorage = new FileStorage();
-            var storageImpl = fileStorage.Build(configuration);
+            IFileStorageImpl storageImpl = fileStorage.Build(configuration);
             await Task.Run(async () =>
             {
                 await Log.InfoAsync("Use the following parameter for connections:");
@@ -28,28 +28,20 @@ namespace RegionalWeather.Scheduler
                 await Log.InfoAsync($"Runs every: {configuration.RunsEvery} s");
                 await Log.InfoAsync($"Path to Locations file: {configuration.PathToLocationsMap}");
                 await Log.InfoAsync($"ElasticSearch: {configuration.ElasticHostsAndPorts}");
-                IElasticConnectionBuilder connectionBuilder =
-                    new ElasticConnectionBuilder();
-                var elasticConnection = connectionBuilder.Build(configuration);
-                var locationReader = new LocationFileReader().Build(configuration);
-                var owmReader = new OwmApiReader();
+                
+                IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration);
+                ILocationFileReaderImpl locationReader = new LocationFileReader().Build(configuration);
+                IOwmApiReader owmReader = new OwmApiReader();
 
-                var owmConverter = new OwmToElasticDocumentConverter();
+                IOwmToElasticDocumentConverter owmConverter = new OwmToElasticDocumentConverter();
 
                 var processor =
                     new ProcessingBaseCurrentWeatherImpl(elasticConnection, locationReader, owmReader, storageImpl,
                         owmConverter);
 
-                var elasticIndexSuccess = true;
-                if (!await processor.ElasticIndexExistsAsync(configuration.ElasticIndexName))
-                {
-                    elasticIndexSuccess = await processor.CreateIndexAsync(configuration.ElasticIndexName);
-                }
 
-                if (elasticIndexSuccess)
-                {
-                    await processor.Process(configuration);
-                }
+                await processor.Process(configuration);
+
             });
         }
     }

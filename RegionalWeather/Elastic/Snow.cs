@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace RegionalWeather.Elastic
+﻿namespace RegionalWeather.Elastic
 {
     public class Snow
     {

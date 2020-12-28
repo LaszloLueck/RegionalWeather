@@ -12,11 +12,11 @@ namespace RegionalWeather.Processing
 {
     public class ProcessingBaseReIndexerImpl : ProcessingBaseReIndexer
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ProcessingBaseCurrentWeatherImpl>.GetLogger();
+        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ProcessingBaseReIndexerImpl>.GetLogger();
 
-        public ProcessingBaseReIndexerImpl(ElasticConnection elasticConnection,
-            OwmToElasticDocumentConverter owmToElasticDocumentConverter, IDirectoryUtils directoryUtilsImpl) : base(
-            elasticConnection, owmToElasticDocumentConverter, directoryUtilsImpl)
+        public ProcessingBaseReIndexerImpl(IElasticConnection elasticConnection,
+            IOwmToElasticDocumentConverter owmDocumentConverter, IDirectoryUtils directoryUtils) : base(
+            elasticConnection, owmDocumentConverter, directoryUtils)
         {
         }
 
@@ -24,38 +24,57 @@ namespace RegionalWeather.Processing
         {
             await Task.Run(async () =>
             {
-                var files = DirectoryUtilsImpl.GetFilesOfDirectory(configuration.ReindexLookupPath,
-                    "FileStorage_*.dat");
-                var tasks = (from file in files select file)
-                    .Select(async file =>
+                var continueWithDirectory = true;
+                if (DirectoryExists(configuration.ReindexLookupPath))
+                {
+                    await Log.WarningAsync("Reindex lookup directory does not exist. Lets create it");
+                    continueWithDirectory = CreateDirectory(configuration.ReindexLookupPath);
+                }
+
+                if (continueWithDirectory)
+                {
+                    var elasticIndexSuccess = true;
+                    if (!await IndexExistsAsync(configuration.ElasticIndexName))
                     {
-                        await Log.InfoAsync($"Restore data from file <{file}>");
-                        var elements = await DirectoryUtilsImpl.ReadAllLinesOfFileAsync(file);
-                        
-                        var convertedElementTasks = elements
-                            .Select(async element => await DeserializeObjectAsync<Root>(element));
+                        elasticIndexSuccess = await CreateIndexAsync(configuration.ElasticIndexName);
+                    }
 
-                        var convertedElements = (await Task.WhenAll(convertedElementTasks))
-                            .Values();
+                    if (elasticIndexSuccess)
+                    {
+                        var files = GetFilesOfDirectory(configuration.ReindexLookupPath,
+                            "FileStorage_*.dat");
+                        var tasks = (from file in files select file)
+                            .Select(async file =>
+                            {
+                                await Log.InfoAsync($"Restore data from file <{file}>");
+                                //var elements = await ReadAllLinesOfFileAsync(file);
+                                var elements = ReadAllLinesOfFile(file);
+                                
+                                var convertedElementTasks = elements
+                                    .Select(async element => await DeserializeObjectAsync<Root>(element));
 
-                        var convertedIndexDocs = convertedElements
-                            .Select(async element => await OwmToElasticDocumentConverterImpl.ConvertAsync(element));
+                                var convertedElements = (await Task.WhenAll(convertedElementTasks))
+                                    .Values();
 
-                        (await Task.WhenAll(convertedIndexDocs))
-                            .Values()
-                            .Select((owm, index) => new {owm, index})
-                            .GroupBy(g => g.index / 100, o => o.owm)
-                            .ToList()
-                            .ForEach(async group =>
-                                await ElasticConnectionImpl.BulkWriteDocumentsAsync(group,
-                                    configuration.ElasticIndexName));
+                                var convertedIndexDocs = convertedElements
+                                    .Select(async element => await ConvertAsync(element));
 
-                        await Log.InfoAsync($"Remove the file <{file}> after indexing");
-                        await Task.Run(() => DeleteFile(file));
-                    });
+                                (await Task.WhenAll(convertedIndexDocs))
+                                    .Values()
+                                    .Select((owm, index) => new {owm, index})
+                                    .GroupBy(g => g.index / 100, o => o.owm)
+                                    .ToList()
+                                    .ForEach(async group =>
+                                        await BulkWriteDocumentsAsync(group,
+                                            configuration.ElasticIndexName));
 
-                await Task.WhenAll(tasks.ToList());
+                                await Log.InfoAsync($"Remove the file <{file}> after indexing");
+                                await Task.Run(() => DeleteFile(file));
+                            });
 
+                        await Task.WhenAll(tasks.ToList());
+                    }
+                }
             });
         }
     }

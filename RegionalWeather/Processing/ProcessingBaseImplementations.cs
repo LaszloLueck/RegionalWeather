@@ -8,36 +8,18 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Logging;
-using RegionalWeather.Transport.Elastic;
 
 namespace RegionalWeather.Processing
 {
     public class ProcessingBaseImplementations
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ProcessingBaseImplementations>.GetLogger();
-        
-        private readonly ElasticConnection _elasticConnection;
-        
-        protected ProcessingBaseImplementations(ElasticConnection elasticConnection)
-        {
-            _elasticConnection = elasticConnection;
-        }
-        
-        public async Task<bool> ElasticIndexExistsAsync(string indexName)
-        {
-            return await _elasticConnection.IndexExistsAsync(indexName);
-        }
-
-        public async Task<bool> CreateIndexAsync(string indexName)
-        {
-            return await _elasticConnection.CreateIndexAsync(indexName);
-        }
-        
+      
         protected static async Task<Option<T>> DeserializeObjectAsync<T>(string data)
         {
             try
             {
-                await using MemoryStream stream = new(16184);
+                await using MemoryStream stream = new();
                 var bt = Encoding.UTF8.GetBytes(data);
                 await stream.WriteAsync(bt.AsMemory(0, bt.Length));
                 stream.Position = 0;

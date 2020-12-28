@@ -6,7 +6,14 @@ using RegionalWeather.Logging;
 
 namespace RegionalWeather.Transport.Owm
 {
-    public class OwmApiReader
+
+    public interface IOwmApiReader
+    {
+        public Task<Option<string>> ReadDataFromLocationAsync(string url);
+    }
+    
+    
+    public class OwmApiReader : IOwmApiReader
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<OwmApiReader>.GetLogger();
 

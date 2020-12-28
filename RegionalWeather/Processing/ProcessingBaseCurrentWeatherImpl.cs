@@ -14,51 +14,61 @@ using RegionalWeather.Transport.Owm;
 
 namespace RegionalWeather.Processing
 {
-    public class ProcessingBaseCurrentWeatherImpl : ProcessingBase
+    public class ProcessingBaseCurrentWeatherImpl : ProcessingBaseCurrentWeather
     {
-        public ProcessingBaseCurrentWeatherImpl(ElasticConnection elasticConnection,
-            LocationFileReaderImpl locationFileReader, OwmApiReader owmApiReader, FileStorageImpl fileStorageImpl,
-            OwmToElasticDocumentConverter owmToElasticDocumentConverter) : base(elasticConnection, locationFileReader,
+        public ProcessingBaseCurrentWeatherImpl(IElasticConnection elasticConnection,
+            ILocationFileReaderImpl locationFileReader, IOwmApiReader owmApiReader, IFileStorageImpl fileStorageImpl,
+            IOwmToElasticDocumentConverter owmToElasticDocumentConverter) : base(elasticConnection, locationFileReader,
             owmApiReader, fileStorageImpl, owmToElasticDocumentConverter)
         {
         }
 
         public override async Task Process(ConfigurationItems configuration)
         {
-            var locationList = (await LocationFileReader.ReadConfigurationAsync()).ValueOr(new List<string>());
+            var elasticIndexSuccess = true;
+            if (!await IndexExistsAsync(configuration.ElasticIndexName))
+            {
+                elasticIndexSuccess = await CreateIndexAsync(configuration.ElasticIndexName);
+            }
+
+            if (elasticIndexSuccess)
+            {
+                var locationList = (await ReadConfigurationAsync()).ValueOr(new List<string>());
 
 
-            var rootTasksOption = ConvertToParallelQuery(locationList, configuration.Parallelism)
-                .Select(async location =>
-                {
-                    var url =
-                        $"https://api.openweathermap.org/data/2.5/weather?{location}&APPID={configuration.OwmApiKey}&units=metric";
-                    return await OwmApiReaderImpl.ReadDataFromLocationAsync(url);
-                });
+                var rootTasksOption = ConvertToParallelQuery(locationList, configuration.Parallelism)
+                    .Select(async location =>
+                    {
+                        var url =
+                            $"https://api.openweathermap.org/data/2.5/weather?{location}&APPID={configuration.OwmApiKey}&units=metric";
+                        return await ReadDataFromLocationAsync(url);
+                    });
 
-            var rootOptions = (await Task.WhenAll(rootTasksOption)).Values();
+                var rootOptions = (await Task.WhenAll(rootTasksOption)).Values();
 
-            var rootStrings = ConvertToParallelQuery(rootOptions, configuration.Parallelism)
-                .Select(async rootString => await DeserializeObjectAsync<Root>(rootString));
+                var rootStrings = ConvertToParallelQuery(rootOptions, configuration.Parallelism)
+                    .Select(async rootString => await DeserializeObjectAsync<Root>(rootString));
 
-            var toElastic = (await Task.WhenAll(rootStrings))
-                .Values()
-                .Select(item =>
-                {
-                    item.ReadTime = DateTime.Now;
-                    return item;
-                });
+                var toElastic = (await Task.WhenAll(rootStrings))
+                    .Values()
+                    .Select(item =>
+                    {
+                        item.ReadTime = DateTime.Now;
+                        return item;
+                    });
 
-            var concurrentBag = new ConcurrentBag<Root>(toElastic);
-            await FileStorage.WriteAllDataAsync(concurrentBag);
+                var concurrentBag = new ConcurrentBag<Root>(toElastic);
+                await WriteAllDataAsync(concurrentBag);
 
-            var elasticDocsTasks = ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
-                .Select(async rootDoc => await OwmConverter.ConvertAsync(rootDoc));
+                var elasticDocsTasks = ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
+                    .Select(async rootDoc => await ConvertAsync(rootDoc));
 
-            var elasticDocs = (await Task.WhenAll(elasticDocsTasks))
-                .Values();
+                var elasticDocs = (await Task.WhenAll(elasticDocsTasks))
+                    .Values();
 
-            await ElasticConnectionImpl.BulkWriteDocumentsAsync(elasticDocs, configuration.ElasticIndexName);
+                await BulkWriteDocumentsAsync(elasticDocs, configuration.ElasticIndexName);
+            }
+            
         }
     }
 }

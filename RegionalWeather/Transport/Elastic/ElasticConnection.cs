@@ -19,11 +19,20 @@ namespace RegionalWeather.Transport.Elastic
     {
         public ElasticConnection Build(ConfigurationItems configurationItems)
         {
-            return new(configurationItems);
+            return new ElasticConnection(configurationItems);
         }
     }
 
-    public class ElasticConnection
+    public interface IElasticConnection
+    {
+        public Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
+            where T : WeatherLocationDocument;
+        public Task<bool> IndexExistsAsync(string indexName);
+        public Task<bool> CreateIndexAsync(string indexName);
+        public Task<bool> DeleteIndexAsync(string indexName);
+    }
+
+    public class ElasticConnection : IElasticConnection
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ElasticConnection>.GetLogger();
         private readonly ElasticClient _elasticClient;

@@ -7,7 +7,12 @@ using RegionalWeather.Owm;
 
 namespace RegionalWeather.Elastic
 {
-    public class OwmToElasticDocumentConverter
+    public interface IOwmToElasticDocumentConverter
+    {
+        public Task<Option<WeatherLocationDocument>> ConvertAsync(Root owmDoc);
+    }
+    
+    public class OwmToElasticDocumentConverter : IOwmToElasticDocumentConverter
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<OwmToElasticDocumentConverter>.GetLogger();
         
