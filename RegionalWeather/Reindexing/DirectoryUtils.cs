@@ -19,11 +19,6 @@ namespace RegionalWeather.Reindexing
         {
             return File.ReadLines(path);
         }
-        
-        public async Task<IEnumerable<string>> ReadAllLinesOfFileAsync(string path)
-        {
-            return await Task.Run(() => File.ReadLines(path));
-        }
 
         public bool CreateDirectory(string path)
         {

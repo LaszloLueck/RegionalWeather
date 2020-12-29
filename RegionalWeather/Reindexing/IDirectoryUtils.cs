@@ -13,8 +13,6 @@ namespace RegionalWeather.Reindexing
 
         IEnumerable<string> ReadAllLinesOfFile(string path);
 
-        Task<IEnumerable<string>> ReadAllLinesOfFileAsync(string path);
-
         bool DeleteFile(string path);
 
     }

@@ -7,7 +7,7 @@ using RegionalWeather.Logging;
 
 namespace RegionalWeather.Scheduler
 {
-    public class ReindexerFactory<T> : ISchedulerFactory where T : class, IJob
+    public class CustomSchedulerFactory<T> : ISchedulerFactory where T : class, IJob
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<CustomSchedulerFactory<T>>.GetLogger();
         private readonly string _jobName;
@@ -16,8 +16,10 @@ namespace RegionalWeather.Scheduler
         private IScheduler _scheduler;
         private readonly StdSchedulerFactory _factory;
         private readonly ConfigurationItems _configurationItems;
+        private readonly int _runsEvery;
+        private readonly int _delay;
 
-        public ReindexerFactory(string jobName, string groupName, string triggerName, ConfigurationItems configurationItems)
+        public CustomSchedulerFactory(string jobName, string groupName, string triggerName, int delay, int runsEvery, ConfigurationItems configurationItems)
         {
             Task.Run(async() =>
             {
@@ -25,12 +27,15 @@ namespace RegionalWeather.Scheduler
                 await Log.InfoAsync($"JobName: {jobName}");
                 await Log.InfoAsync($"GroupName: {groupName}");
                 await Log.InfoAsync($"TriggerName: {triggerName}");
-                await Log.InfoAsync($"RepeatInterval: {configurationItems.ReindexLookupEvery} s");
+                await Log.InfoAsync($"RepeatInterval: {runsEvery} s");
+                await Log.InfoAsync($"Start delay: {delay} s");
             });
             _jobName = jobName;
             _groupName = groupName;
             _triggerName = triggerName;
             _configurationItems = configurationItems;
+            _runsEvery = runsEvery;
+            _delay = delay;
             _factory = new StdSchedulerFactory();
         }
 
@@ -58,12 +63,12 @@ namespace RegionalWeather.Scheduler
 
         private ITrigger GetTrigger()
         {
-            var dto = new DateTimeOffset(DateTime.Now).AddSeconds(10);
+            var dto = new DateTimeOffset(DateTime.Now).AddSeconds(_delay);
             return TriggerBuilder
                 .Create()
                 .WithIdentity(_triggerName, _groupName)
                 .StartAt(dto)
-                .WithSimpleSchedule(x => x.WithIntervalInSeconds(_configurationItems.ReindexLookupEvery).RepeatForever())
+                .WithSimpleSchedule(x => x.WithIntervalInSeconds(_runsEvery).RepeatForever())
                 .Build();
         }
 

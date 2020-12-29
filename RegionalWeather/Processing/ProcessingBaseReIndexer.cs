@@ -47,10 +47,7 @@ namespace RegionalWeather.Processing
         
         public IEnumerable<string> GetFilesOfDirectory(string path, string filePattern) =>
             _directoryUtils.GetFilesOfDirectory(path, filePattern);
-        
-        public async Task<IEnumerable<string>> ReadAllLinesOfFileAsync(string path) =>
-            await _directoryUtils.ReadAllLinesOfFileAsync(path);
-        
+
         public bool DeleteFile(string path) => _directoryUtils.DeleteFile(path);
             
         public abstract Task Process(ConfigurationItems configuration);
