@@ -57,6 +57,11 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
+### 2021-01-01 Happy new year!
+The new year starts with a big refactoring and the implementation of the whole airpollution-thing. More information tomorrow, too late for today.
+
+Cheers!
+
 ### 2020-12-27 Prerequisits done
 A medium refactoring is done. Now it is relativly easy possible, to implement other data imports to elastic (and store to filesystem).
 Next step is, to import the air polution data within another scheduler (every 1h).
