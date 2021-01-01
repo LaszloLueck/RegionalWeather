@@ -26,9 +26,9 @@ namespace RegionalWeather.Transport.Elastic
     public interface IElasticConnection
     {
         public Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
-            where T : WeatherLocationDocument;
+            where T : ElasticDocument;
         public Task<bool> IndexExistsAsync(string indexName);
-        public Task<bool> CreateIndexAsync(string indexName);
+        public Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument;
         public Task<bool> DeleteIndexAsync(string indexName);
     }
 
@@ -50,7 +50,7 @@ namespace RegionalWeather.Transport.Elastic
         }
 
         public async Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
-            where T : WeatherLocationDocument
+            where T : ElasticDocument
         {
             var result = await _elasticClient.IndexManyAsync(documents, indexName);
             await ProcessResponse(result);
@@ -63,13 +63,13 @@ namespace RegionalWeather.Transport.Elastic
             return ret.Exists;
         }
 
-        public async Task<bool> CreateIndexAsync(string indexName)
+        public async Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument
         {
             await Log.InfoAsync($"Create index {indexName} with Mapping");
             var result = await _elasticClient
                 .Indices
                 .CreateAsync(indexName, index => index
-                    .Map<WeatherLocationDocument>(x => x.AutoMap()
+                    .Map<T>(x => x.AutoMap()
                         .Properties(d => d.Date(e => e.Name(en => en.TimeStamp)))));
             return await ProcessResponse(result);
         }

@@ -4,7 +4,7 @@ using Optional.Collections;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
 using RegionalWeather.Logging;
-using RegionalWeather.Owm;
+using RegionalWeather.Owm.CurrentWeather;
 using RegionalWeather.Reindexing;
 using RegionalWeather.Transport.Elastic;
 
@@ -15,7 +15,7 @@ namespace RegionalWeather.Processing
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ProcessingBaseReIndexerImpl>.GetLogger();
 
         public ProcessingBaseReIndexerImpl(IElasticConnection elasticConnection,
-            IOwmToElasticDocumentConverter owmDocumentConverter, IDirectoryUtils directoryUtils) : base(
+            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmDocumentConverter, IDirectoryUtils directoryUtils) : base(
             elasticConnection, owmDocumentConverter, directoryUtils)
         {
         }
@@ -36,7 +36,7 @@ namespace RegionalWeather.Processing
                     var elasticIndexSuccess = true;
                     if (!await IndexExistsAsync(configuration.ElasticIndexName))
                     {
-                        elasticIndexSuccess = await CreateIndexAsync(configuration.ElasticIndexName);
+                        elasticIndexSuccess = await CreateIndexAsync<WeatherLocationDocument>(configuration.ElasticIndexName);
                     }
 
                     if (elasticIndexSuccess)
@@ -51,7 +51,7 @@ namespace RegionalWeather.Processing
                                 var elements = ReadAllLinesOfFile(file);
                                 
                                 var convertedElementTasks = elements
-                                    .Select(async element => await DeserializeObjectAsync<Root>(element));
+                                    .Select(async element => await DeserializeObjectAsync<CurrentWeatherBase>(element));
 
                                 var convertedElements = (await Task.WhenAll(convertedElementTasks))
                                     .Values();

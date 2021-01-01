@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace RegionalWeather.Owm
+namespace RegionalWeather.Owm.CurrentWeather
 {
     public class Rain
     {

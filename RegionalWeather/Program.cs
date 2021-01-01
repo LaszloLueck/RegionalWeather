@@ -32,8 +32,14 @@ namespace RegionalWeather
                     ISchedulerFactory reIndexerSchedulerFactory =
                         new CustomSchedulerFactory<ReindexerSchedulerJob>("reIndexerJob", "reIndexerGroup",
                             "reIndexerTrigger", 5, configuration.ReindexLookupEvery, configuration);
+
+                    ISchedulerFactory airPollutionSchedulerFactory =
+                        new CustomSchedulerFactory<AirPollutionSchedulerJob>("airPollutionJob", "airPollutionGroup",
+                            "airPollutionTrigger", 15, configuration.AirPollutionRunsEvery, configuration);
+                    
                     await currentWeatherSchedulerFactory.RunScheduler();
                     await reIndexerSchedulerFactory.RunScheduler();
+                    await airPollutionSchedulerFactory.RunScheduler();
                     await Log.InfoAsync("App is in running state!");
                 });
                 return Task.Delay(-1);

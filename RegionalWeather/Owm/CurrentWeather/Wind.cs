@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace RegionalWeather.Owm
+namespace RegionalWeather.Owm.CurrentWeather
 {
     public class Wind    {
         [JsonPropertyName("speed")]

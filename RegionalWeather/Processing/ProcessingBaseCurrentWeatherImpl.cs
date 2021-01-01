@@ -9,6 +9,7 @@ using RegionalWeather.Elastic;
 using RegionalWeather.FileRead;
 using RegionalWeather.Filestorage;
 using RegionalWeather.Owm;
+using RegionalWeather.Owm.CurrentWeather;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
 
@@ -18,7 +19,8 @@ namespace RegionalWeather.Processing
     {
         public ProcessingBaseCurrentWeatherImpl(IElasticConnection elasticConnection,
             ILocationFileReaderImpl locationFileReader, IOwmApiReader owmApiReader, IFileStorageImpl fileStorageImpl,
-            IOwmToElasticDocumentConverter owmToElasticDocumentConverter) : base(elasticConnection, locationFileReader,
+            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter) : base(elasticConnection,
+            locationFileReader,
             owmApiReader, fileStorageImpl, owmToElasticDocumentConverter)
         {
         }
@@ -28,14 +30,13 @@ namespace RegionalWeather.Processing
             var elasticIndexSuccess = true;
             if (!await IndexExistsAsync(configuration.ElasticIndexName))
             {
-                elasticIndexSuccess = await CreateIndexAsync(configuration.ElasticIndexName);
+                elasticIndexSuccess = await CreateIndexAsync<WeatherLocationDocument>(configuration.ElasticIndexName);
             }
 
             if (elasticIndexSuccess)
             {
-                var locationList = (await ReadConfigurationAsync()).ValueOr(new List<string>());
-
-
+                var locationList =
+                    (await ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(new List<string>());
                 var rootTasksOption = ConvertToParallelQuery(locationList, configuration.Parallelism)
                     .Select(async location =>
                     {
@@ -47,7 +48,7 @@ namespace RegionalWeather.Processing
                 var rootOptions = (await Task.WhenAll(rootTasksOption)).Values();
 
                 var rootStrings = ConvertToParallelQuery(rootOptions, configuration.Parallelism)
-                    .Select(async rootString => await DeserializeObjectAsync<Root>(rootString));
+                    .Select(async rootString => await DeserializeObjectAsync<CurrentWeatherBase>(rootString));
 
                 var toElastic = (await Task.WhenAll(rootStrings))
                     .Values()
@@ -57,8 +58,11 @@ namespace RegionalWeather.Processing
                         return item;
                     });
 
-                var concurrentBag = new ConcurrentBag<Root>(toElastic);
-                await WriteAllDataAsync(concurrentBag);
+                var concurrentBag = new ConcurrentBag<CurrentWeatherBase>(toElastic);
+                var storeFileName =
+                    configuration.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
+
+                await WriteAllDataAsync(concurrentBag, storeFileName);
 
                 var elasticDocsTasks = ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
                     .Select(async rootDoc => await ConvertAsync(rootDoc));
@@ -68,7 +72,6 @@ namespace RegionalWeather.Processing
 
                 await BulkWriteDocumentsAsync(elasticDocs, configuration.ElasticIndexName);
             }
-            
         }
     }
 }

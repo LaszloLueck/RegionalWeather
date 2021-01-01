@@ -12,37 +12,37 @@ namespace RegionalWeather.Filestorage
 {
     interface IFileStorage
     {
-        FileStorageImpl Build(ConfigurationItems configurationItems);
+        FileStorageImpl Build();
     }
 
     public class FileStorage : IFileStorage
     {
-        public FileStorageImpl Build(ConfigurationItems configurationItems)
+        public FileStorageImpl Build()
         {
-            return new(configurationItems);
+            return new();
         }
     }
 
     public interface IFileStorageImpl
     {
-        public Task WriteAllDataAsync<T>(IEnumerable<T> roots);
+        public Task WriteAllDataAsync<T>(IEnumerable<T> roots, string fileName);
     }
 
     public class FileStorageImpl : IFileStorageImpl
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<FileStorageImpl>.GetLogger();
-        private readonly string _storageFilePath;
-        public FileStorageImpl(ConfigurationItems configurationItems)
+        //private readonly string _storageFilePath;
+        public FileStorageImpl()
         {
-            var filename = configurationItems.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
-            _storageFilePath = filename;
+            //var filename = configurationItems.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
+            //_storageFilePath = filename;
         }
 
-        public async Task WriteAllDataAsync<T>(IEnumerable<T> roots)
+        public async Task WriteAllDataAsync<T>(IEnumerable<T> roots, string fileName)
         {
             await Task.Run(async () =>
             {
-                await using StreamWriter streamWriter = new StreamWriter(_storageFilePath, true, Encoding.UTF8, 32768);
+                await using StreamWriter streamWriter = new StreamWriter(fileName, true, Encoding.UTF8, 32768);
                 var enumerable = roots.ToList();
                 enumerable.ToList().ForEach(async root =>
                 {

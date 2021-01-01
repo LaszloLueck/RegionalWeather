@@ -10,41 +10,41 @@ namespace RegionalWeather.FileRead
 {
     public interface ILocationFileReader
     {
-        ILocationFileReaderImpl Build(ConfigurationItems configurationItems);
+        ILocationFileReaderImpl Build();
     }
 
     public class LocationFileReader : ILocationFileReader
     {
 
 
-        public ILocationFileReaderImpl Build(ConfigurationItems configurationItems)
+        public ILocationFileReaderImpl Build()
         {
-            return new LocationFileReaderImpl(configurationItems);
+            return new LocationFileReaderImpl();
         }
     }
 
     public interface ILocationFileReaderImpl
     {
-        public Task<Option<List<string>>> ReadConfigurationAsync();
+        public Task<Option<List<string>>> ReadLocationsAsync(string locationPath);
     }
     
     public class LocationFileReaderImpl : ILocationFileReaderImpl
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<LocationFileReaderImpl>.GetLogger();
-        private readonly ConfigurationItems _configurationItems;
-        public LocationFileReaderImpl(ConfigurationItems configurationItems)
+
+        public LocationFileReaderImpl()
         {
-            _configurationItems = configurationItems;
+
         }
 
-        public async Task<Option<List<string>>> ReadConfigurationAsync()
+        public async Task<Option<List<string>>> ReadLocationsAsync(string locationPath)
         {
             await Log.InfoAsync("Try to read the list of locations");
             try
             {
                 return await Task.Run(async () =>
                 {
-                    var sr = new StreamReader(_configurationItems.PathToLocationsMap);
+                    var sr = new StreamReader(locationPath);
                     string line;
                     var l = new List<string>();
                     while ((line = await sr.ReadLineAsync()) != null)

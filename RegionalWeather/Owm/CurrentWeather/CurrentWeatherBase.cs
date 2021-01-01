@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace RegionalWeather.Owm
+namespace RegionalWeather.Owm.CurrentWeather
 {
-    public class Root    {
+    public class CurrentWeatherBase    {
         [JsonPropertyName("coord")]
         public Coord Coord { get; set; } 
 
