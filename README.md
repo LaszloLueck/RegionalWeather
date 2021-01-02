@@ -19,7 +19,7 @@ For the docker-container you need 2 things.
 ### docker-compose.yaml
 First, lets have a look to the docker-compose.yaml
 ```yaml
-version: "3.7"
+version: "3.7" 
 
 services:
   regionalweather:
