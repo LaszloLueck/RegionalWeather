@@ -18,9 +18,9 @@ namespace RegionalWeather.Processing
     public class ProcessingBaseAirPollutionImpl : ProcessingBaseAirPollution
     {
         public ProcessingBaseAirPollutionImpl(IElasticConnection elasticConnection,
-            ILocationFileReaderImpl locationFileReaderImplImpl, IFileStorageImpl fileStorageImplImpl,
+            ILocationFileReader locationFileReader, IFileStorage fileStorage,
             IOwmApiReader owmApiReader, IOwmToElasticDocumentConverter<AirPollutionBase> owmToElasticDocumentConverter)
-            : base(elasticConnection, locationFileReaderImplImpl, fileStorageImplImpl,
+            : base(elasticConnection, locationFileReader, fileStorage,
                 owmApiReader, owmToElasticDocumentConverter)
         {
         }

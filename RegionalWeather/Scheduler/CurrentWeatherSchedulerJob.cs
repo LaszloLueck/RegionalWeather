@@ -30,16 +30,14 @@ namespace RegionalWeather.Scheduler
                 await Log.InfoAsync($"Write to Elastic index: {configuration.ElasticIndexName}");
                 await Log.InfoAsync($"ElasticSearch: {configuration.ElasticHostsAndPorts}");
                 
-                IFileStorage fileStorage = new FileStorage();
-                IFileStorageImpl storageImpl = fileStorage.Build();
+                IFileStorage storage = new FileStorageImpl();
                 IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration);
-                ILocationFileReaderImpl locationReader = new LocationFileReader().Build();
+                ILocationFileReader locationReader = new LocationFileReaderImpl();
                 IOwmApiReader owmReader = new OwmApiReader();
-
                 IOwmToElasticDocumentConverter<CurrentWeatherBase> owmConverter = new OwmToElasticDocumentConverter();
 
                 var processor =
-                    new ProcessingBaseCurrentWeatherImpl(elasticConnection, locationReader, owmReader, storageImpl,
+                    new ProcessingBaseCurrentWeatherImpl(elasticConnection, locationReader, owmReader, storage,
                         owmConverter);
 
 

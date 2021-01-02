@@ -18,10 +18,10 @@ namespace RegionalWeather.Processing
     public class ProcessingBaseCurrentWeatherImpl : ProcessingBaseCurrentWeather
     {
         public ProcessingBaseCurrentWeatherImpl(IElasticConnection elasticConnection,
-            ILocationFileReaderImpl locationFileReader, IOwmApiReader owmApiReader, IFileStorageImpl fileStorageImpl,
+            ILocationFileReader locationFileReader, IOwmApiReader owmApiReader, IFileStorage fileStorage,
             IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter) : base(elasticConnection,
             locationFileReader,
-            owmApiReader, fileStorageImpl, owmToElasticDocumentConverter)
+            owmApiReader, fileStorage, owmToElasticDocumentConverter)
         {
         }
 

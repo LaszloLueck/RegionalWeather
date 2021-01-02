@@ -10,32 +10,12 @@ namespace RegionalWeather.FileRead
 {
     public interface ILocationFileReader
     {
-        ILocationFileReaderImpl Build();
-    }
-
-    public class LocationFileReader : ILocationFileReader
-    {
-
-
-        public ILocationFileReaderImpl Build()
-        {
-            return new LocationFileReaderImpl();
-        }
-    }
-
-    public interface ILocationFileReaderImpl
-    {
         public Task<Option<List<string>>> ReadLocationsAsync(string locationPath);
     }
     
-    public class LocationFileReaderImpl : ILocationFileReaderImpl
+    public class LocationFileReaderImpl : ILocationFileReader
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<LocationFileReaderImpl>.GetLogger();
-
-        public LocationFileReaderImpl()
-        {
-
-        }
 
         public async Task<Option<List<string>>> ReadLocationsAsync(string locationPath)
         {
