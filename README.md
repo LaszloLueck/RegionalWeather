@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/LaszloLueck/RegionalWeather.svg?branch=main)](https://travis-ci.com/LaszloLueck/RegionalWeather) 
+
 # RegionalWeather
 ## Description
 See current state for a short briefing about the final solution.
