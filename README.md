@@ -225,9 +225,36 @@ Cheers!
 
 ## How it looks like (very prototypish)
 ### 2021-01-03
-The following images shows samples about airpollution for various places over time.
+The following images shows samples about airpollution values for various places over time (last 48h in this case).
 
+### Air Pollution Index (Current value 1 (best) to 5 (worst))
+<img src="images/API.png" width="1024"></img>
 
+#### Carbon Monoxide (CO)
+<img src="images/CO.png" width="1024"></img>
+
+#### Nitrogen Monoxide (NO)
+<img src="images/NO.png" width="1024"></img>
+
+#### Nitrogen Dioxide (NO<sub>2</sub>)
+<img src="images/NO2.png" width="1024"></img>
+
+#### Ozone (O<sub>3</sub>)
+<img src="images/O3.png" width="1024"></img>
+
+#### Sulphur Dioxide (SO<sub>2</sub>)
+<img src="images/SO2.png" width="1024"></img>
+
+#### Coarse Particular Matter (PM10, values smaller 10µm)
+<img src="images/PM10.png" width="1024"></img>
+
+#### Fine Particular Matter (PM25, values smaller 2.5µm)
+<img src="images/PM25.png" width="1024"></img>
+
+#### Ammonia (NH<sub>3</sub>)
+<img src="images/NH3.png" width="1024"></img>
+
+### 2020-12-02
 Here you have a look a the grafana dashboard looks like. Above the temperature of 20 selected locations around me plotted as a time series. The second Panel is a Worldmap item that shows the current temperatures in the map.
 Not bad for first prototype, but a lot of work to do...
 
