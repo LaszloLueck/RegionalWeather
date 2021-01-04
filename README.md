@@ -224,6 +224,10 @@ Cheers!
 - For the bulk thing and because i found the code nice i refactor it a little and use a lot of more linq / lambda shit.
 
 ## How it looks like (very prototypish)
+### 2021-01-03
+The following images shows samples about airpollution for various places over time.
+
+
 Here you have a look a the grafana dashboard looks like. Above the temperature of 20 selected locations around me plotted as a time series. The second Panel is a Worldmap item that shows the current temperatures in the map.
 Not bad for first prototype, but a lot of work to do...
 
