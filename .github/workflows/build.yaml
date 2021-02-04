@@ -1,0 +1,30 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.100
+      - name: Install dotnet sonarscanner
+        run:  dotnet tool install --global dotnet-sonarscanner
+      - name: Install dependencies
+        run: dotnet restore
+      - name: do the checks and provide them to sonar
+        run: |
+          dotnet sonarscanner begin /name:"RegionalWeather" /d:sonar.host.url="http://sonar.gretzki.ddns.net" /k:"de655c1ea0762b2da948cc9f0feb88f68fd33bb6" /d:sonar.cs.opencover.reportsPaths="TestResults/coverage.opencover.xml" /d:sonar.login="${{ secrets.GITHUBFORSONARQUBE }}"
+          dotnet clean
+          dotnet build /t:rebuild
+          dotnet test RegionalWeatherTest /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="../TestResults/" 
+          dotnet sonarscanner end /d:sonar.login="${{ secrets.GITHUBFORSONARQUBE }}"
