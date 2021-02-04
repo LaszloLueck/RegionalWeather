@@ -6,7 +6,6 @@ using RegionalWeather.Elastic;
 using RegionalWeather.FileRead;
 using RegionalWeather.Filestorage;
 using RegionalWeather.Logging;
-using RegionalWeather.Owm;
 using RegionalWeather.Owm.CurrentWeather;
 using RegionalWeather.Processing;
 using RegionalWeather.Transport.Elastic;

@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Nest;
 using Optional;
 using RegionalWeather.Logging;
-using RegionalWeather.Owm;
 using RegionalWeather.Owm.AirPollution;
 using RegionalWeather.Owm.CurrentWeather;
 

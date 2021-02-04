@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Optional;
-using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
 
 namespace RegionalWeather.FileRead
@@ -44,7 +43,7 @@ namespace RegionalWeather.FileRead
             {
                 return await Task.Run(async () =>
                 {
-                    var sr = new StreamReader(locationPath);
+                    using var sr = new StreamReader(locationPath);
                     string line;
                     var l = new List<string>();
                     while ((line = await sr.ReadLineAsync()) != null)

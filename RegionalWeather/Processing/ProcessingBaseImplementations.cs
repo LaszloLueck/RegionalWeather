@@ -15,6 +15,8 @@ namespace RegionalWeather.Processing
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ProcessingBaseImplementations>.GetLogger();
       
+        protected ProcessingBaseImplementations(){}
+        
         protected static async Task<Option<T>> DeserializeObjectAsync<T>(string data)
         {
             try
