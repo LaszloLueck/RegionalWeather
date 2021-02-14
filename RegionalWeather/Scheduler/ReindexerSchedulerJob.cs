@@ -3,7 +3,6 @@ using Quartz;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
 using RegionalWeather.Logging;
-using RegionalWeather.Owm;
 using RegionalWeather.Owm.CurrentWeather;
 using RegionalWeather.Processing;
 using RegionalWeather.Reindexing;

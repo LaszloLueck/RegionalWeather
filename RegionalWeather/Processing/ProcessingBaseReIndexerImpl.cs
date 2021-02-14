@@ -47,7 +47,6 @@ namespace RegionalWeather.Processing
                             .Select(async file =>
                             {
                                 await Log.InfoAsync($"Restore data from file <{file}>");
-                                //var elements = await ReadAllLinesOfFileAsync(file);
                                 var elements = ReadAllLinesOfFile(file);
                                 
                                 var convertedElementTasks = elements

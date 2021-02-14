@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
 
 namespace RegionalWeather.Filestorage
@@ -18,6 +16,7 @@ namespace RegionalWeather.Filestorage
     public class FileStorageImpl : IFileStorage
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<FileStorageImpl>.GetLogger();
+
         public async Task WriteAllDataAsync<T>(IEnumerable<T> roots, string fileName)
         {
             await Task.Run(async () =>

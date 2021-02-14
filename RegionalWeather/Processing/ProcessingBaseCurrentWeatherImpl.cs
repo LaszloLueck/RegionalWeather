@@ -8,7 +8,6 @@ using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
 using RegionalWeather.FileRead;
 using RegionalWeather.Filestorage;
-using RegionalWeather.Owm;
 using RegionalWeather.Owm.CurrentWeather;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
