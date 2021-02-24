@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Configuration;
@@ -30,6 +31,9 @@ namespace RegionalWeather.Processing
             _owmApiReader = owmApiReader;
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
         }
+
+        public string BuildIndexName(string indexName, DateTime shardDatetime) =>
+            _elasticConnection.BuildIndexName(indexName, shardDatetime);
 
         public async Task<Option<ElasticDocument>> ConvertAsync(AirPollutionBase owmDoc) =>
             await _owmToElasticDocumentConverter.ConvertAsync(owmDoc);

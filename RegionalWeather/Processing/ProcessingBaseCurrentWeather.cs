@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Optional;
@@ -31,6 +32,9 @@ namespace RegionalWeather.Processing
             _fileStorage = fileStorage;
             _owmConverter = owmToElasticDocumentConverter;
         }
+
+        public string BuildIndexName(string indexName, DateTime shardDatetime) =>
+            _elasticConnection.BuildIndexName(indexName, shardDatetime);
 
         public async Task<Option<ElasticDocument>> ConvertAsync(CurrentWeatherBase owmDoc) =>
             await _owmConverter.ConvertAsync(owmDoc);

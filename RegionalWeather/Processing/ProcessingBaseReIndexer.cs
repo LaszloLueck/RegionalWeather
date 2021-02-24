@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Configuration;
@@ -24,6 +25,9 @@ namespace RegionalWeather.Processing
             _owmDocumentConverter = owmDocumentConverter;
             _directoryUtils = directoryUtils;
         }
+
+        public string BuildIndexName(string indexName, DateTime shardDatetime) =>
+            _elasticConnection.BuildIndexName(indexName, shardDatetime);
 
         public IEnumerable<string> ReadAllLinesOfFile(string path) => _directoryUtils.ReadAllLinesOfFile(path);
 

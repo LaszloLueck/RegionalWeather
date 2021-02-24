@@ -25,6 +25,7 @@ namespace RegionalWeather.Transport.Elastic
 
     public interface IElasticConnection
     {
+        public string BuildIndexName(string indexName, DateTime shardDatetime);
         public Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
             where T : ElasticDocument;
         public Task<bool> IndexExistsAsync(string indexName);
@@ -47,6 +48,26 @@ namespace RegionalWeather.Transport.Elastic
             var pool = new StaticConnectionPool(BuildServerList(configurationItems.ElasticHostsAndPorts).ToArray());
             var setting = new ConnectionSettings(pool);
             _elasticClient = new ElasticClient(setting);
+        }
+        
+        public string BuildIndexName(string indexName, DateTime shardDatetime)
+        {
+            //we receive the indexname in format [-XXYYYY], so we can rebuild the sharding as expected from configuration
+            //e.g. mysuperindex[-MMyyyy] would be calculated to mysuperindex-122020 for december of 2020...
+
+            try
+            {
+                var indexPart = indexName.Substring(0, indexName.IndexOf('['));
+                var pattern = indexName.Substring(indexName.IndexOf('[')).Replace("[", string.Empty)
+                    .Replace("]", string.Empty);
+                var shardDate = pattern.Length > 0 ? shardDatetime.ToString(pattern) : "";
+                return indexPart + shardDate;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Error while converting indexname <{indexName}> with sharding pattern");
+                return indexName;
+            }
         }
 
         public async Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)

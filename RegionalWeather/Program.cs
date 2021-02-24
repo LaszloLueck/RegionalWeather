@@ -30,7 +30,7 @@ namespace RegionalWeather
                         new CustomSchedulerFactory<CurrentWeatherSchedulerJob>("currentWeatherJob",
                             "currentWeatherGroup", "currentWeatherTrigger", 10, configuration.RunsEvery, configuration);
                     ISchedulerFactory reIndexerSchedulerFactory =
-                        new CustomSchedulerFactory<ReIndexerSchedulerJob>("reIndexerJob", "reIndexerGroup",
+                        new CustomSchedulerFactory<ReindexerSchedulerJob>("reIndexerJob", "reIndexerGroup",
                             "reIndexerTrigger", 5, configuration.ReindexLookupEvery, configuration);
 
                     ISchedulerFactory airPollutionSchedulerFactory =
