@@ -67,6 +67,8 @@ namespace RegionalWeather.Processing
             if (!await IndexExistsAsync(indexName))
             {
                 await CreateIndexAsync<WeatherLocationDocument>(indexName);
+                await RefreshIndexAsync(indexName);
+                await FlushIndexAsync(indexName);
             }
 
             await BulkWriteDocumentsAsync(elasticDocs, indexName);

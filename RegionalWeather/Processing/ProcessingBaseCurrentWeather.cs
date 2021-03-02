@@ -13,7 +13,9 @@ using RegionalWeather.Transport.Owm;
 
 namespace RegionalWeather.Processing
 {
-    public abstract class ProcessingBaseCurrentWeather : ProcessingBaseImplementations, IElasticConnection, ILocationFileReader, IOwmApiReader, IFileStorage, IOwmToElasticDocumentConverter<CurrentWeatherBase>, IProcessingBase
+    public abstract class ProcessingBaseCurrentWeather : ProcessingBaseImplementations, IElasticConnection,
+        ILocationFileReader, IOwmApiReader, IFileStorage, IOwmToElasticDocumentConverter<CurrentWeatherBase>,
+        IProcessingBase
     {
         private readonly IElasticConnection _elasticConnection;
         private readonly ILocationFileReader _locationFileReader;
@@ -22,7 +24,8 @@ namespace RegionalWeather.Processing
         private readonly IOwmToElasticDocumentConverter<CurrentWeatherBase> _owmConverter;
 
 
-        protected ProcessingBaseCurrentWeather(IElasticConnection elasticConnection, ILocationFileReader locationFileReader,
+        protected ProcessingBaseCurrentWeather(IElasticConnection elasticConnection,
+            ILocationFileReader locationFileReader,
             IOwmApiReader owmApiReader, IFileStorage fileStorage,
             IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter)
         {
@@ -32,6 +35,10 @@ namespace RegionalWeather.Processing
             _fileStorage = fileStorage;
             _owmConverter = owmToElasticDocumentConverter;
         }
+
+        public Task<bool> RefreshIndexAsync(string indexName) => _elasticConnection.RefreshIndexAsync(indexName);
+
+        public Task<bool> FlushIndexAsync(string indexName) => _elasticConnection.FlushIndexAsync(indexName);
 
         public string BuildIndexName(string indexName, DateTime shardDatetime) =>
             _elasticConnection.BuildIndexName(indexName, shardDatetime);
@@ -61,10 +68,5 @@ namespace RegionalWeather.Processing
             await _elasticConnection.CreateIndexAsync<WeatherLocationDocument>(indexName);
 
         public abstract Task Process(ConfigurationItems configuration);
-
-
-
-
-
     }
 }

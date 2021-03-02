@@ -13,7 +13,8 @@ using RegionalWeather.Transport.Owm;
 namespace RegionalWeather.Processing
 {
     public abstract class ProcessingBaseAirPollution : ProcessingBaseImplementations, IElasticConnection,
-        ILocationFileReader, IProcessingBase, IOwmApiReader, IFileStorage, IOwmToElasticDocumentConverter<AirPollutionBase>
+        ILocationFileReader, IProcessingBase, IOwmApiReader, IFileStorage,
+        IOwmToElasticDocumentConverter<AirPollutionBase>
     {
         private readonly IElasticConnection _elasticConnection;
         private readonly ILocationFileReader _locationFileReader;
@@ -31,6 +32,10 @@ namespace RegionalWeather.Processing
             _owmApiReader = owmApiReader;
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
         }
+
+        public Task<bool> RefreshIndexAsync(string indexName) => _elasticConnection.RefreshIndexAsync(indexName);
+
+        public Task<bool> FlushIndexAsync(string indexName) => _elasticConnection.FlushIndexAsync(indexName);
 
         public string BuildIndexName(string indexName, DateTime shardDatetime) =>
             _elasticConnection.BuildIndexName(indexName, shardDatetime);

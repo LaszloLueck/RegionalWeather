@@ -26,6 +26,10 @@ namespace RegionalWeather.Processing
             _directoryUtils = directoryUtils;
         }
 
+        public Task<bool> RefreshIndexAsync(string indexName) => _elasticConnection.RefreshIndexAsync(indexName);
+
+        public Task<bool> FlushIndexAsync(string indexName) => _elasticConnection.FlushIndexAsync(indexName);
+
         public string BuildIndexName(string indexName, DateTime shardDatetime) =>
             _elasticConnection.BuildIndexName(indexName, shardDatetime);
 

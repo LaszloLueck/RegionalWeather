@@ -79,6 +79,8 @@ namespace RegionalWeather.Processing
             if (!await IndexExistsAsync(indexName))
             {
                 await CreateIndexAsync<AirPollutionDocument>(indexName);
+                await RefreshIndexAsync(indexName);
+                await FlushIndexAsync(indexName);
             }
 
             await BulkWriteDocumentsAsync(elasticDocs, indexName);

@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Optional.Collections;
@@ -37,6 +38,25 @@ namespace RegionalWeather.Processing
                 {
                     var files = GetFilesOfDirectory(configuration.ReindexLookupPath,
                         "FileStorage_*.dat");
+
+                    //Create the indexes from files
+                    var distinct = files
+                        .Select(file =>
+                        BuildIndexName(configuration.ElasticIndexName, GenerateIndexDateFromFileName(file)))
+                        .Distinct();
+
+                    var createIndexTasks = distinct
+                        .Select(async indexName =>
+                        {
+                            if (!await IndexExistsAsync(indexName))
+                            {
+                                await CreateIndexAsync<WeatherLocationDocument>(indexName);
+                                await RefreshIndexAsync(indexName);
+                            }
+                        });
+
+                    await Task.WhenAll(createIndexTasks);
+
                     var tasks = (from file in files select file)
                         .Select(async file =>
                         {
@@ -49,40 +69,40 @@ namespace RegionalWeather.Processing
                             var convertedElements = (await Task.WhenAll(convertedElementTasks))
                                 .Values();
 
-                            var convertedIndexDocs = convertedElements
+                            var convertedIndexDocsTasks = convertedElements
                                 .Select(async element => await ConvertAsync(element));
 
-                            var documentsAndIndex = (await Task.WhenAll(convertedIndexDocs))
-                                .Values()
+                            var convertedIndexDocs = (await Task.WhenAll(convertedIndexDocsTasks)).Values();
+
+                            var indexName = BuildIndexName(configuration.ElasticIndexName,
+                                GenerateIndexDateFromFileName(file));
+
+                            convertedIndexDocs
                                 .Select((owm, index) => new {owm, index})
                                 .GroupBy(g => g.index / 100, o => o.owm)
-                                .Select(async elements =>
-                                {
-                                    var element = elements.Last();
-                                    var indexName = BuildIndexName(configuration.ElasticIndexName,
-                                        element.TimeStamp);
-
-                                    if (!await IndexExistsAsync(indexName))
-                                    {
-                                        await CreateIndexAsync<WeatherLocationDocument>(indexName);
-                                    }
-
-                                    return (elements, indexName);
-                                });
-
-                            (await Task.WhenAll(documentsAndIndex))
                                 .ToList()
                                 .ForEach(async group =>
-                                    await BulkWriteDocumentsAsync(group.elements,
-                                        group.indexName));
+                                    await BulkWriteDocumentsAsync(group, indexName));
 
+                            await FlushIndexAsync(indexName);
                             await Log.InfoAsync($"Remove the file <{file}> after indexing");
                             await Task.Run(() => DeleteFile(file));
                         });
 
-                    await Task.WhenAll(tasks.ToList());
+                    await Task.WhenAll(tasks);
                 }
             });
+        }
+
+        private static DateTime GenerateIndexDateFromFileName(string fileName)
+        {
+            var subSeq = fileName.IndexOf("FileStorage_");
+            var fn = fileName.Substring(subSeq);
+
+
+            var newName = fn.Replace("FileStorage_", "").Replace(".dat", "");
+
+            return DateTime.ParseExact(newName, "yyyyMMdd", CultureInfo.InvariantCulture);
         }
     }
 }
