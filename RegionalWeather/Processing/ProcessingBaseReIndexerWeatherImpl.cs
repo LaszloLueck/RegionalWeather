@@ -12,11 +12,11 @@ using RegionalWeather.Transport.Elastic;
 
 namespace RegionalWeather.Processing
 {
-    public class ProcessingBaseReIndexerImpl : ProcessingBaseReIndexer
+    public class ProcessingBaseReIndexerWeatherImpl : ProcessingBaseReIndexerWeather
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ProcessingBaseReIndexerImpl>.GetLogger();
+        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ProcessingBaseReIndexerWeatherImpl>.GetLogger();
 
-        public ProcessingBaseReIndexerImpl(IElasticConnection elasticConnection,
+        public ProcessingBaseReIndexerWeatherImpl(IElasticConnection elasticConnection,
             IOwmToElasticDocumentConverter<CurrentWeatherBase> owmDocumentConverter,
             IDirectoryUtils directoryUtils) : base(
             elasticConnection, owmDocumentConverter, directoryUtils)

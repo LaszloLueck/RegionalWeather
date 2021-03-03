@@ -10,7 +10,7 @@ using RegionalWeather.Transport.Elastic;
 
 namespace RegionalWeather.Processing
 {
-    public abstract class ProcessingBaseReIndexer : ProcessingBaseImplementations, IDirectoryUtils, IElasticConnection,
+    public abstract class ProcessingBaseReIndexerWeather : ProcessingBaseImplementations, IDirectoryUtils, IElasticConnection,
         IOwmToElasticDocumentConverter<CurrentWeatherBase>, IProcessingBase
     {
         private readonly IElasticConnection _elasticConnection;
@@ -18,7 +18,7 @@ namespace RegionalWeather.Processing
         private readonly IDirectoryUtils _directoryUtils;
 
 
-        protected ProcessingBaseReIndexer(IElasticConnection elasticConnection,
+        protected ProcessingBaseReIndexerWeather(IElasticConnection elasticConnection,
             IOwmToElasticDocumentConverter<CurrentWeatherBase> owmDocumentConverter, IDirectoryUtils directoryUtils)
         {
             _elasticConnection = elasticConnection;

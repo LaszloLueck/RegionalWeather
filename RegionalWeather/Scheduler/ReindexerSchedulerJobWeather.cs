@@ -10,9 +10,9 @@ using RegionalWeather.Transport.Elastic;
 
 namespace RegionalWeather.Scheduler
 {
-    public class ReindexerSchedulerJob : IJob
+    public class ReindexerSchedulerJobWeather : IJob
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ReindexerSchedulerJob>.GetLogger();
+        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ReindexerSchedulerJobWeather>.GetLogger();
 
         public async Task Execute(IJobExecutionContext context)
         {
@@ -25,7 +25,7 @@ namespace RegionalWeather.Scheduler
                 IDirectoryUtils directoryUtils = new DirectoryUtils();
 
                 var processor =
-                    new ProcessingBaseReIndexerImpl(elasticConnection, owmConverter, directoryUtils);
+                    new ProcessingBaseReIndexerWeatherImpl(elasticConnection, owmConverter, directoryUtils);
 
                 await processor.Process(configuration);
             });
