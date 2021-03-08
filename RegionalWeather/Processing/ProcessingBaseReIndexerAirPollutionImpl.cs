@@ -51,7 +51,7 @@ namespace RegionalWeather.Processing
                         {
                             if (!await IndexExistsAsync(indexName))
                             {
-                                await CreateIndexAsync<WeatherLocationDocument>(indexName);
+                                await CreateIndexAsync<AirPollutionDocument>(indexName);
                                 await RefreshIndexAsync(indexName);
                             }
                         });
@@ -97,11 +97,11 @@ namespace RegionalWeather.Processing
 
         private static DateTime GenerateIndexDateFromFileName(string fileName)
         {
-            var subSeq = fileName.IndexOf("FileStorage_");
+            var subSeq = fileName.IndexOf("AirPollution_");
             var fn = fileName.Substring(subSeq);
 
 
-            var newName = fn.Replace("FileStorage_", "").Replace(".dat", "");
+            var newName = fn.Replace("AirPollution_", "").Replace(".dat", "");
 
             return DateTime.ParseExact(newName, "yyyyMMdd", CultureInfo.InvariantCulture);
         }
