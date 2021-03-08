@@ -17,60 +17,61 @@ namespace RegionalWeather.Processing
     public class ProcessingBaseCurrentWeatherImpl : ProcessingBaseCurrentWeather
     {
         public ProcessingBaseCurrentWeatherImpl(IElasticConnection elasticConnection,
-            ILocationFileReaderImpl locationFileReader, IOwmApiReader owmApiReader, IFileStorageImpl fileStorageImpl,
+            ILocationFileReader locationFileReader, IOwmApiReader owmApiReader, IFileStorage fileStorage,
             IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter) : base(elasticConnection,
             locationFileReader,
-            owmApiReader, fileStorageImpl, owmToElasticDocumentConverter)
+            owmApiReader, fileStorage, owmToElasticDocumentConverter)
         {
         }
 
         public override async Task Process(ConfigurationItems configuration)
         {
-            var elasticIndexSuccess = true;
-            if (!await IndexExistsAsync(configuration.ElasticIndexName))
+            var locationList =
+                (await ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(new List<string>());
+            var rootTasksOption = ConvertToParallelQuery(locationList, configuration.Parallelism)
+                .Select(async location =>
+                {
+                    var url =
+                        $"https://api.openweathermap.org/data/2.5/weather?{location}&APPID={configuration.OwmApiKey}&units=metric";
+                    return await ReadDataFromLocationAsync(url);
+                });
+
+            var rootOptions = (await Task.WhenAll(rootTasksOption)).Values();
+
+            var rootStrings = ConvertToParallelQuery(rootOptions, configuration.Parallelism)
+                .Select(async rootString => await DeserializeObjectAsync<CurrentWeatherBase>(rootString));
+
+
+            var readTime = DateTime.Now;
+            var toElastic = (await Task.WhenAll(rootStrings))
+                .Values()
+                .Select(item =>
+                {
+                    item.ReadTime = readTime;
+                    return item;
+                });
+
+            var concurrentBag = new ConcurrentBag<CurrentWeatherBase>(toElastic);
+            var storeFileName =
+                configuration.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
+
+            await WriteAllDataAsync(concurrentBag, storeFileName);
+
+            var elasticDocsTasks = ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
+                .Select(async rootDoc => await ConvertAsync(rootDoc));
+
+            var elasticDocs = (await Task.WhenAll(elasticDocsTasks))
+                .Values();
+
+            var indexName = BuildIndexName(configuration.ElasticIndexName, readTime);
+            if (!await IndexExistsAsync(indexName))
             {
-                elasticIndexSuccess = await CreateIndexAsync<WeatherLocationDocument>(configuration.ElasticIndexName);
+                await CreateIndexAsync<WeatherLocationDocument>(indexName);
+                await RefreshIndexAsync(indexName);
+                await FlushIndexAsync(indexName);
             }
 
-            if (elasticIndexSuccess)
-            {
-                var locationList =
-                    (await ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(new List<string>());
-                var rootTasksOption = ConvertToParallelQuery(locationList, configuration.Parallelism)
-                    .Select(async location =>
-                    {
-                        var url =
-                            $"https://api.openweathermap.org/data/2.5/weather?{location}&APPID={configuration.OwmApiKey}&units=metric";
-                        return await ReadDataFromLocationAsync(url);
-                    });
-
-                var rootOptions = (await Task.WhenAll(rootTasksOption)).Values();
-
-                var rootStrings = ConvertToParallelQuery(rootOptions, configuration.Parallelism)
-                    .Select(async rootString => await DeserializeObjectAsync<CurrentWeatherBase>(rootString));
-
-                var toElastic = (await Task.WhenAll(rootStrings))
-                    .Values()
-                    .Select(item =>
-                    {
-                        item.ReadTime = DateTime.Now;
-                        return item;
-                    });
-
-                var concurrentBag = new ConcurrentBag<CurrentWeatherBase>(toElastic);
-                var storeFileName =
-                    configuration.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
-
-                await WriteAllDataAsync(concurrentBag, storeFileName);
-
-                var elasticDocsTasks = ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
-                    .Select(async rootDoc => await ConvertAsync(rootDoc));
-
-                var elasticDocs = (await Task.WhenAll(elasticDocsTasks))
-                    .Values();
-
-                await BulkWriteDocumentsAsync(elasticDocs, configuration.ElasticIndexName);
-            }
+            await BulkWriteDocumentsAsync(elasticDocs, indexName);
         }
     }
 }

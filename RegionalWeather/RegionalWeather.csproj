@@ -6,18 +6,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="coverlet.msbuild" Version="3.0.2">
+      <PackageReference Include="coverlet.msbuild" Version="3.0.3">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
-      <PackageReference Include="Elasticsearch.Net" Version="7.10.1" />
-      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" />
-      <PackageReference Include="NEST" Version="7.10.1" />
-      <PackageReference Include="NEST.JsonNetSerializer" Version="7.10.1" />
+      <PackageReference Include="Elasticsearch.Net" Version="7.11.1" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.9.0" />
+      <PackageReference Include="NEST" Version="7.11.1" />
+      <PackageReference Include="NEST.JsonNetSerializer" Version="7.11.1" />
       <PackageReference Include="Optional" Version="4.0.0" />
       <PackageReference Include="Quartz" Version="3.2.4" />
       <PackageReference Include="Quartz.Plugins" Version="3.2.4" />
-      <PackageReference Include="SonarAnalyzer.CSharp" Version="8.17.0.26580">
+      <PackageReference Include="SonarAnalyzer.CSharp" Version="8.19.0.28253">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>

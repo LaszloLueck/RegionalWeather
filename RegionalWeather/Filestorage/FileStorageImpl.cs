@@ -8,25 +8,12 @@ using RegionalWeather.Logging;
 
 namespace RegionalWeather.Filestorage
 {
-    interface IFileStorage
-    {
-        FileStorageImpl Build();
-    }
-
-    public class FileStorage : IFileStorage
-    {
-        public FileStorageImpl Build()
-        {
-            return new();
-        }
-    }
-
-    public interface IFileStorageImpl
+    public interface IFileStorage
     {
         public Task WriteAllDataAsync<T>(IEnumerable<T> roots, string fileName);
     }
 
-    public class FileStorageImpl : IFileStorageImpl
+    public class FileStorageImpl : IFileStorage
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<FileStorageImpl>.GetLogger();
 

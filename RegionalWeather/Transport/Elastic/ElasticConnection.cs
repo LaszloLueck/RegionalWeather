@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
@@ -25,11 +26,14 @@ namespace RegionalWeather.Transport.Elastic
 
     public interface IElasticConnection
     {
+        public string BuildIndexName(string indexName, DateTime shardDatetime);
         public Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
             where T : ElasticDocument;
         public Task<bool> IndexExistsAsync(string indexName);
         public Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument;
         public Task<bool> DeleteIndexAsync(string indexName);
+        public Task<bool> RefreshIndexAsync(string indexName);
+        public Task<bool> FlushIndexAsync(string indexName);
     }
 
     public class ElasticConnection : IElasticConnection
@@ -47,6 +51,26 @@ namespace RegionalWeather.Transport.Elastic
             var pool = new StaticConnectionPool(BuildServerList(configurationItems.ElasticHostsAndPorts).ToArray());
             var setting = new ConnectionSettings(pool);
             _elasticClient = new ElasticClient(setting);
+        }
+        
+        public string BuildIndexName(string indexName, DateTime shardDatetime)
+        {
+            //we receive the indexname in format [-XXYYYY], so we can rebuild the sharding as expected from configuration
+            //e.g. mysuperindex[-MMyyyy] would be calculated to mysuperindex-122020 for december of 2020...
+
+            try
+            {
+                var indexPart = indexName.Substring(0, indexName.IndexOf('['));
+                var pattern = indexName.Substring(indexName.IndexOf('[')).Replace("[", string.Empty)
+                    .Replace("]", string.Empty);
+                var shardDate = pattern.Length > 0 ? shardDatetime.ToString(pattern) : "";
+                return indexPart + shardDate;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Error while converting indexname <{indexName}> with sharding pattern");
+                return indexName;
+            }
         }
 
         public async Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
@@ -74,6 +98,24 @@ namespace RegionalWeather.Transport.Elastic
             return await ProcessResponse(result);
         }
 
+        public async Task<bool> RefreshIndexAsync(string indexName)
+        {
+            await Log.InfoAsync($"Refresh index {indexName}");
+            var result = await _elasticClient
+                .Indices
+                .RefreshAsync(indexName);
+            return await ProcessResponse(result);
+        }
+
+        public async Task<bool> FlushIndexAsync(string indexName)
+        {
+            await Log.InfoAsync($"Flush index {indexName}");
+            var result = await _elasticClient
+                .Indices
+                .FlushAsync(indexName);
+            return await ProcessResponse(result);
+        }
+        
         public async Task<bool> DeleteIndexAsync(string indexName)
         {
             await Log.InfoAsync($"Delete index {indexName}");
@@ -103,6 +145,16 @@ namespace RegionalWeather.Transport.Elastic
                     await Log.WarningAsync(createIndexResponse.DebugInformation);
                     await Log.ErrorAsync(createIndexResponse.OriginalException, createIndexResponse.ServerError.Error.Reason);
                     return createIndexResponse.IsValid;
+                case FlushResponse flushResponse:
+                    if (flushResponse.IsValid) return flushResponse.IsValid;
+                    await Log.WarningAsync(flushResponse.DebugInformation);
+                    await Log.ErrorAsync(flushResponse.OriginalException, flushResponse.ServerError.Error.Reason);
+                    return flushResponse.IsValid;
+                case RefreshResponse refreshResponse:
+                    if (refreshResponse.IsValid) return refreshResponse.IsValid;
+                    await Log.WarningAsync(refreshResponse.DebugInformation);
+                    await Log.ErrorAsync(refreshResponse.OriginalException, refreshResponse.ServerError.Error.Reason);
+                    return refreshResponse.IsValid;
                 case BulkResponse bulkResponse:
                     if (bulkResponse.IsValid)
                     {

@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Optional;
@@ -12,25 +13,35 @@ using RegionalWeather.Transport.Owm;
 
 namespace RegionalWeather.Processing
 {
-    public abstract class ProcessingBaseCurrentWeather : ProcessingBaseImplementations, IElasticConnection, ILocationFileReaderImpl, IOwmApiReader, IFileStorageImpl, IOwmToElasticDocumentConverter<CurrentWeatherBase>, IProcessingBase
+    public abstract class ProcessingBaseCurrentWeather : ProcessingBaseImplementations, IElasticConnection,
+        ILocationFileReader, IOwmApiReader, IFileStorage, IOwmToElasticDocumentConverter<CurrentWeatherBase>,
+        IProcessingBase
     {
         private readonly IElasticConnection _elasticConnection;
-        private readonly ILocationFileReaderImpl _locationFileReader;
+        private readonly ILocationFileReader _locationFileReader;
         private readonly IOwmApiReader _owmApiReader;
-        private readonly IFileStorageImpl _fileStorage;
+        private readonly IFileStorage _fileStorage;
         private readonly IOwmToElasticDocumentConverter<CurrentWeatherBase> _owmConverter;
 
 
-        protected ProcessingBaseCurrentWeather(IElasticConnection elasticConnection, ILocationFileReaderImpl locationFileReader,
-            IOwmApiReader owmApiReader, IFileStorageImpl fileStorageImpl,
+        protected ProcessingBaseCurrentWeather(IElasticConnection elasticConnection,
+            ILocationFileReader locationFileReader,
+            IOwmApiReader owmApiReader, IFileStorage fileStorage,
             IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter)
         {
             _elasticConnection = elasticConnection;
             _locationFileReader = locationFileReader;
             _owmApiReader = owmApiReader;
-            _fileStorage = fileStorageImpl;
+            _fileStorage = fileStorage;
             _owmConverter = owmToElasticDocumentConverter;
         }
+
+        public Task<bool> RefreshIndexAsync(string indexName) => _elasticConnection.RefreshIndexAsync(indexName);
+
+        public Task<bool> FlushIndexAsync(string indexName) => _elasticConnection.FlushIndexAsync(indexName);
+
+        public string BuildIndexName(string indexName, DateTime shardDatetime) =>
+            _elasticConnection.BuildIndexName(indexName, shardDatetime);
 
         public async Task<Option<ElasticDocument>> ConvertAsync(CurrentWeatherBase owmDoc) =>
             await _owmConverter.ConvertAsync(owmDoc);
@@ -57,10 +68,5 @@ namespace RegionalWeather.Processing
             await _elasticConnection.CreateIndexAsync<WeatherLocationDocument>(indexName);
 
         public abstract Task Process(ConfigurationItems configuration);
-
-
-
-
-
     }
 }

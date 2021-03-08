@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Configuration;
@@ -9,7 +10,7 @@ using RegionalWeather.Transport.Elastic;
 
 namespace RegionalWeather.Processing
 {
-    public abstract class ProcessingBaseReIndexer : ProcessingBaseImplementations, IDirectoryUtils, IElasticConnection,
+    public abstract class ProcessingBaseReIndexerWeather : ProcessingBaseImplementations, IDirectoryUtils, IElasticConnection,
         IOwmToElasticDocumentConverter<CurrentWeatherBase>, IProcessingBase
     {
         private readonly IElasticConnection _elasticConnection;
@@ -17,13 +18,20 @@ namespace RegionalWeather.Processing
         private readonly IDirectoryUtils _directoryUtils;
 
 
-        protected ProcessingBaseReIndexer(IElasticConnection elasticConnection,
+        protected ProcessingBaseReIndexerWeather(IElasticConnection elasticConnection,
             IOwmToElasticDocumentConverter<CurrentWeatherBase> owmDocumentConverter, IDirectoryUtils directoryUtils)
         {
             _elasticConnection = elasticConnection;
             _owmDocumentConverter = owmDocumentConverter;
             _directoryUtils = directoryUtils;
         }
+
+        public Task<bool> RefreshIndexAsync(string indexName) => _elasticConnection.RefreshIndexAsync(indexName);
+
+        public Task<bool> FlushIndexAsync(string indexName) => _elasticConnection.FlushIndexAsync(indexName);
+
+        public string BuildIndexName(string indexName, DateTime shardDatetime) =>
+            _elasticConnection.BuildIndexName(indexName, shardDatetime);
 
         public IEnumerable<string> ReadAllLinesOfFile(string path) => _directoryUtils.ReadAllLinesOfFile(path);
 

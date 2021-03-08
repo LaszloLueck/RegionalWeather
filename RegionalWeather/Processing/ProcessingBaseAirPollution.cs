@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Configuration;
@@ -12,33 +13,41 @@ using RegionalWeather.Transport.Owm;
 namespace RegionalWeather.Processing
 {
     public abstract class ProcessingBaseAirPollution : ProcessingBaseImplementations, IElasticConnection,
-        ILocationFileReaderImpl, IProcessingBase, IOwmApiReader, IFileStorageImpl, IOwmToElasticDocumentConverter<AirPollutionBase>
+        ILocationFileReader, IProcessingBase, IOwmApiReader, IFileStorage,
+        IOwmToElasticDocumentConverter<AirPollutionBase>
     {
         private readonly IElasticConnection _elasticConnection;
-        private readonly ILocationFileReaderImpl _locationFileReaderImpl;
-        private readonly IFileStorageImpl _fileStorageImpl;
+        private readonly ILocationFileReader _locationFileReader;
+        private readonly IFileStorage _fileStorage;
         private readonly IOwmApiReader _owmApiReader;
         private readonly IOwmToElasticDocumentConverter<AirPollutionBase> _owmToElasticDocumentConverter;
 
         protected ProcessingBaseAirPollution(IElasticConnection elasticConnection,
-            ILocationFileReaderImpl locationFileReaderImplImpl, IFileStorageImpl fileStorageImplImpl,
+            ILocationFileReader locationFileReader, IFileStorage fileStorage,
             IOwmApiReader owmApiReader, IOwmToElasticDocumentConverter<AirPollutionBase> owmToElasticDocumentConverter)
         {
             _elasticConnection = elasticConnection;
-            _locationFileReaderImpl = locationFileReaderImplImpl;
-            _fileStorageImpl = fileStorageImplImpl;
+            _locationFileReader = locationFileReader;
+            _fileStorage = fileStorage;
             _owmApiReader = owmApiReader;
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
         }
+
+        public Task<bool> RefreshIndexAsync(string indexName) => _elasticConnection.RefreshIndexAsync(indexName);
+
+        public Task<bool> FlushIndexAsync(string indexName) => _elasticConnection.FlushIndexAsync(indexName);
+
+        public string BuildIndexName(string indexName, DateTime shardDatetime) =>
+            _elasticConnection.BuildIndexName(indexName, shardDatetime);
 
         public async Task<Option<ElasticDocument>> ConvertAsync(AirPollutionBase owmDoc) =>
             await _owmToElasticDocumentConverter.ConvertAsync(owmDoc);
 
         public async Task<Option<List<string>>> ReadLocationsAsync(string locationPath) =>
-            await _locationFileReaderImpl.ReadLocationsAsync(locationPath);
+            await _locationFileReader.ReadLocationsAsync(locationPath);
 
         public async Task WriteAllDataAsync<T>(IEnumerable<T> roots, string fileName) =>
-            await _fileStorageImpl.WriteAllDataAsync(roots, fileName);
+            await _fileStorage.WriteAllDataAsync(roots, fileName);
 
         public async Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
             where T : ElasticDocument => await _elasticConnection.BulkWriteDocumentsAsync(documents, indexName);
