@@ -59,6 +59,11 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
+### 2021-03-08
+Today comes a big update.
+- A bunch of dependency bumps to current versions
+- Rework / Refactoring of how to the storage in elastic works. Currently all the data would be stored in a single index. For less amount of data, this solution works fine. After 3 months, in my single index are approx. 500.000 documents stored. The more data there is in a single index, the slower the index works for complex queries over longer periods of time. For this I have rewritten the program in such a way that the data is written in different indexes based on time. This is called time-based sharding. This works for new data as well as for data that is added to the index from a backup (reindexing). 
+
 ### 2021-01-01 Happy new year!
 The new year starts with a big refactoring and the implementation of the whole airpollution-thing. More information tomorrow, too late for today.
 
