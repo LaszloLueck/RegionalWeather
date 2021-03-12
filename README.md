@@ -41,10 +41,14 @@ services:
       - PathToLocationsMap=./locations/Locations.txt
       - ElasticHostsAndPorts=http://192.168.19.19:9200
       - OwmApiKey=THEKEYYOUWOULDRECEIVEIFYOUREGISTERONOWM
-      - ElasticIndexName=weatherlocations
+      - ElasticIndexName=weatherlocations[-MMyyyy]
       - FileStorageTemplate=./storage/FileStorage_[CURRENTDATE].dat
       - ReindexLookupEvery=60
       - ReindexLookupPath=./backup
+      - AirPollutionRunsEvery=3600
+      - AirPollutionIndexName=airpollutionindex[-MMyyyy]
+      - AirPollutionLocationsFile=./locations/AirPollutionLocations.txt
+      - AirPollutionFileStoragePath=./storage/AirPollution_[CURRENTDATE].dat
     volumes:
       - .regionalweather:/app/locations
       - .storage:/app/storage
