@@ -75,7 +75,7 @@ namespace RegionalWeather.Processing
 
                             var convertedIndexDocs = (await Task.WhenAll(convertedIndexDocsTasks)).Values();
 
-                            var indexName = BuildIndexName(configuration.ElasticIndexName,
+                            var indexName = BuildIndexName(configuration.AirPollutionIndexName,
                                 GenerateIndexDateFromFileName(file));
 
                             convertedIndexDocs
