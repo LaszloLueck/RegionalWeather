@@ -6,5 +6,6 @@ namespace RegionalWeather.Configuration
     {
         Option<string> ReadEnvironmentVariableString(EnvEntries value, bool returnEmptyStringIfNoValue = false);
         Option<int> ReadEnvironmentVariableInt(EnvEntries value);
+        Option<bool> ReadEnvironmentVariableBool(EnvEntries value);
     }
 }

@@ -19,6 +19,8 @@ namespace RegionalWeather
         {
             await Log.InfoAsync("starting app");
 
+            
+            
             IConfigurationFactory configurationFactory = new ConfigurationFactory();
 
             var mainTask = (await new ConfigurationBuilder(configurationFactory).GetConfigurationAsync()).Select(

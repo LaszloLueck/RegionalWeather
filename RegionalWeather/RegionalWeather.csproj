@@ -17,7 +17,10 @@
       <PackageReference Include="Optional" Version="4.0.0" />
       <PackageReference Include="Quartz" Version="3.2.4" />
       <PackageReference Include="Quartz.Plugins" Version="3.2.4" />
-      <PackageReference Include="SonarAnalyzer.CSharp" Version="8.19.0.28253">
+      <PackageReference Include="Serilog" Version="2.10.0" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+      <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="8.4.1" />
+      <PackageReference Include="SonarAnalyzer.CSharp" Version="8.20.0.28934">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>

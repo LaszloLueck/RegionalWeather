@@ -32,7 +32,7 @@ namespace RegionalWeather.Configuration
             return Environment.GetEnvironmentVariable(value.ToString()).SomeNotNull().Match(
                 some: variable => int.TryParse(variable, out var intVariable)
                     ? Option.Some(intVariable)
-                    : LogAndReturnNone(value.ToString(), variable),
+                    : LogAndReturnNone<int>(value.ToString(), variable),
                 none: () =>
                 {
                     Task.Run(async () =>
@@ -44,13 +44,30 @@ namespace RegionalWeather.Configuration
             );
         }
 
-        private static Option<int> LogAndReturnNone(string envName, string value)
+        private static Option<T> LogAndReturnNone<T>(string envName, string value)
         {
             Task.Run(async () =>
             {
                 await Log.WarningAsync($"Cannot convert value {value} for env variable {envName}");
             });
-            return Option.None<int>();
+            return Option.None<T>();
+        }
+
+        public Option<bool> ReadEnvironmentVariableBool(EnvEntries value)
+        {
+            return Environment.GetEnvironmentVariable(value.ToString()).SomeNotNull().Match(
+                some: variable => bool.TryParse(variable, out var boolVariable)
+                    ? Option.Some(boolVariable)
+                    : LogAndReturnNone<bool>(value.ToString(), variable),
+                none: () =>
+                {
+                    Task.Run(async () =>
+                    {
+                        await Log.WarningAsync($"No entry found for environment variable {value}");
+                    });
+                    return Option.None<bool>();
+                }
+            );
         }
     }
 }
