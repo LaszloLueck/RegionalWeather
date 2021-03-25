@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Optional;
-using RegionalWeather.Logging;
+using Serilog;
 
 namespace RegionalWeather.FileRead
 {
@@ -14,11 +14,16 @@ namespace RegionalWeather.FileRead
     
     public class LocationFileReaderImpl : ILocationFileReader
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<LocationFileReaderImpl>.GetLogger();
+        private readonly ILogger _logger;
+        
+        public LocationFileReaderImpl(ILogger loggingBase)
+        {
+            _logger = loggingBase.ForContext<LocationFileReaderImpl>();
+        }
 
         public async Task<Option<List<string>>> ReadLocationsAsync(string locationPath)
         {
-            await Log.InfoAsync("Try to read the list of locations");
+            _logger.Information("Try to read the list of locations");
             try
             {
                 return await Task.Run(async () =>
@@ -36,7 +41,7 @@ namespace RegionalWeather.FileRead
             }
             catch (Exception exception)
             {
-                await Log.ErrorAsync(exception, "An error occured");
+                _logger.Error(exception, "An error occured");
                 return await Task.Run(Option.None<List<string>>);
             }
         }

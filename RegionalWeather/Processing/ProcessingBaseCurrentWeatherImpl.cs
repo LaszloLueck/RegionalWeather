@@ -11,6 +11,7 @@ using RegionalWeather.Filestorage;
 using RegionalWeather.Owm.CurrentWeather;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
+using Serilog;
 
 namespace RegionalWeather.Processing
 {
@@ -18,9 +19,9 @@ namespace RegionalWeather.Processing
     {
         public ProcessingBaseCurrentWeatherImpl(IElasticConnection elasticConnection,
             ILocationFileReader locationFileReader, IOwmApiReader owmApiReader, IFileStorage fileStorage,
-            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter) : base(elasticConnection,
+            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter, IProcessingBaseImplementations processingBaseImplementations) : base(elasticConnection,
             locationFileReader,
-            owmApiReader, fileStorage, owmToElasticDocumentConverter)
+            owmApiReader, fileStorage, owmToElasticDocumentConverter, processingBaseImplementations)
         {
         }
 

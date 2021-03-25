@@ -5,23 +5,23 @@ using System.Threading.Tasks;
 using Optional.Collections;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
-using RegionalWeather.Logging;
 using RegionalWeather.Owm.AirPollution;
 using RegionalWeather.Reindexing;
 using RegionalWeather.Transport.Elastic;
+using Serilog;
 
 namespace RegionalWeather.Processing
 {
     public class ProcessingBaseReIndexerAirPollutionImpl : ProcessingBaseReIndexerAirPollution
     {
-        private static readonly IMySimpleLogger
-            Log = MySimpleLoggerImpl<ProcessingBaseReIndexerAirPollutionImpl>.GetLogger();
+        private readonly ILogger _logger;
 
         public ProcessingBaseReIndexerAirPollutionImpl(IElasticConnection elasticConnection,
             IOwmToElasticDocumentConverter<AirPollutionBase> owmDocumentConverter,
-            IDirectoryUtils directoryUtils) : base(
-            elasticConnection, owmDocumentConverter, directoryUtils)
+            IDirectoryUtils directoryUtils, ILogger loggingBase, IProcessingBaseImplementations processingBaseImplementations) : base(
+            elasticConnection, owmDocumentConverter, directoryUtils, processingBaseImplementations)
         {
+            _logger = loggingBase.ForContext<ProcessingBaseReIndexerAirPollutionImpl>();
         }
 
         public override async Task Process(ConfigurationItems configuration)
@@ -31,7 +31,7 @@ namespace RegionalWeather.Processing
                 var continueWithDirectory = true;
                 if (!DirectoryExists(configuration.ReindexLookupPath))
                 {
-                    await Log.WarningAsync("Reindex lookup directory does not exist. Lets create it");
+                    _logger.Warning("Reindex lookup directory does not exist. Lets create it");
                     continueWithDirectory = CreateDirectory(configuration.ReindexLookupPath);
                 }
 
@@ -61,7 +61,7 @@ namespace RegionalWeather.Processing
                     var tasks = (from file in files select file)
                         .Select(async file =>
                         {
-                            await Log.InfoAsync($"Restore data from file <{file}>");
+                            _logger.Information($"Restore data from file <{file}>");
                             var elements = ReadAllLinesOfFile(file);
 
                             var convertedElementTasks = elements
@@ -86,7 +86,7 @@ namespace RegionalWeather.Processing
                                     await BulkWriteDocumentsAsync(group, indexName));
 
                             await FlushIndexAsync(indexName);
-                            await Log.InfoAsync($"Remove the file <{file}> after indexing");
+                            _logger.Information($"Remove the file <{file}> after indexing");
                             await Task.Run(() => DeleteFile(file));
                         });
 

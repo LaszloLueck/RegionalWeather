@@ -2,30 +2,34 @@
 using Quartz;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
-using RegionalWeather.Logging;
 using RegionalWeather.Owm.AirPollution;
 using RegionalWeather.Processing;
 using RegionalWeather.Reindexing;
 using RegionalWeather.Transport.Elastic;
+using Serilog;
 
 namespace RegionalWeather.Scheduler
 {
-    public class ReindexerSchedulerJobAirPollution : IJob
+    public abstract class ReindexerSchedulerJobAirPollution : IJob
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ReindexerSchedulerJobAirPollution>.GetLogger();
-
         public async Task Execute(IJobExecutionContext context)
         {
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
+            var loggingBase = (ILogger) context.JobDetail.JobDataMap["loggingBase"];
+            var logger = loggingBase.ForContext<ReindexerSchedulerJobAirPollution>();
+
             await Task.Run(async () =>
             {
-                await Log.InfoAsync("Check if any reindex job todo.");
-                IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration);
+                logger.Information("Check if any reindex job todo.");
+                IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration, loggingBase);
                 IOwmToElasticDocumentConverter<AirPollutionBase> owmConverter =
-                    new AirPollutionToElasticDocumentConverter();
-                IDirectoryUtils directoryUtils = new DirectoryUtils();
+                    new AirPollutionToElasticDocumentConverter(loggingBase);
+                IDirectoryUtils directoryUtils = new DirectoryUtils(loggingBase);
+                IProcessingBaseImplementations processingBaseImplementations =
+                    new ProcessingBaseImplementations(loggingBase);
                 var processor =
-                    new ProcessingBaseReIndexerAirPollutionImpl(elasticConnection, owmConverter, directoryUtils);
+                    new ProcessingBaseReIndexerAirPollutionImpl(elasticConnection, owmConverter, directoryUtils,
+                        loggingBase, processingBaseImplementations);
                 await processor.Process(configuration);
             });
         }

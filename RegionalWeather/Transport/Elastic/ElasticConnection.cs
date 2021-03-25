@@ -1,34 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
 using Nest;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
-using RegionalWeather.Logging;
+using Serilog;
 
 namespace RegionalWeather.Transport.Elastic
 {
     public interface IElasticConnectionBuilder
     {
-        ElasticConnection Build(ConfigurationItems configurationItems);
+        ElasticConnection Build(ConfigurationItems configurationItems, ILogger loggingBase);
     }
 
     public class ElasticConnectionBuilder : IElasticConnectionBuilder
     {
-        public ElasticConnection Build(ConfigurationItems configurationItems)
+        public ElasticConnection Build(ConfigurationItems configurationItems, ILogger loggingBase)
         {
-            return new ElasticConnection(configurationItems);
+            return new ElasticConnection(configurationItems, loggingBase);
         }
     }
 
     public interface IElasticConnection
     {
         public string BuildIndexName(string indexName, DateTime shardDatetime);
+
         public Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
             where T : ElasticDocument;
+
         public Task<bool> IndexExistsAsync(string indexName);
         public Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument;
         public Task<bool> DeleteIndexAsync(string indexName);
@@ -38,21 +39,22 @@ namespace RegionalWeather.Transport.Elastic
 
     public class ElasticConnection : IElasticConnection
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ElasticConnection>.GetLogger();
         private readonly ElasticClient _elasticClient;
+        private readonly ILogger _logger;
 
         private static IEnumerable<Uri> BuildServerList(string hostsAndPorts)
         {
             return hostsAndPorts.Split(",").Select(uri => new Uri(uri));
         }
 
-        public ElasticConnection(ConfigurationItems configurationItems)
+        public ElasticConnection(ConfigurationItems configurationItems, ILogger loggingBase)
         {
             var pool = new StaticConnectionPool(BuildServerList(configurationItems.ElasticHostsAndPorts).ToArray());
             var setting = new ConnectionSettings(pool);
+            _logger = loggingBase.ForContext<ElasticConnection>();
             _elasticClient = new ElasticClient(setting);
         }
-        
+
         public string BuildIndexName(string indexName, DateTime shardDatetime)
         {
             //we receive the indexname in format [-XXYYYY], so we can rebuild the sharding as expected from configuration
@@ -68,7 +70,7 @@ namespace RegionalWeather.Transport.Elastic
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error while converting indexname <{indexName}> with sharding pattern");
+                _logger.Error(ex, $"Error while converting indexname <{indexName}> with sharding pattern");
                 return indexName;
             }
         }
@@ -77,98 +79,97 @@ namespace RegionalWeather.Transport.Elastic
             where T : ElasticDocument
         {
             var result = await _elasticClient.IndexManyAsync(documents, indexName);
-            await ProcessResponse(result);
+            ProcessResponse(result);
         }
 
         public async Task<bool> IndexExistsAsync(string indexName)
         {
-            await Log.InfoAsync("Check if index exists");
+            _logger.Information("Check if index exists");
             var ret = await _elasticClient.Indices.ExistsAsync(indexName);
             return ret.Exists;
         }
 
         public async Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument
         {
-            await Log.InfoAsync($"Create index {indexName} with Mapping");
+            _logger.Information($"Create index {indexName} with Mapping");
             var result = await _elasticClient
                 .Indices
                 .CreateAsync(indexName, index => index
                     .Map<T>(x => x.AutoMap()
                         .Properties(d => d.Date(e => e.Name(en => en.TimeStamp)))));
-            return await ProcessResponse(result);
+            return ProcessResponse(result);
         }
 
         public async Task<bool> RefreshIndexAsync(string indexName)
         {
-            await Log.InfoAsync($"Refresh index {indexName}");
+            _logger.Information($"Refresh index {indexName}");
             var result = await _elasticClient
                 .Indices
                 .RefreshAsync(indexName);
-            return await ProcessResponse(result);
+            return ProcessResponse(result);
         }
 
         public async Task<bool> FlushIndexAsync(string indexName)
         {
-            await Log.InfoAsync($"Flush index {indexName}");
+            _logger.Information($"Flush index {indexName}");
             var result = await _elasticClient
                 .Indices
                 .FlushAsync(indexName);
-            return await ProcessResponse(result);
+            return ProcessResponse(result);
         }
-        
+
         public async Task<bool> DeleteIndexAsync(string indexName)
         {
-            await Log.InfoAsync($"Delete index {indexName}");
+            _logger.Information($"Delete index {indexName}");
             var result = await _elasticClient
                 .Indices
                 .DeleteAsync(indexName);
-            return await ProcessResponse(result);
+            return ProcessResponse(result);
         }
 
-        private static async Task<bool> ProcessResponse<T>(T response)
+        private bool ProcessResponse<T>(T response)
         {
-            
             switch (response)
             {
-                case DeleteIndexResponse deleteIndexResponse :
+                case DeleteIndexResponse deleteIndexResponse:
                     if (deleteIndexResponse.Acknowledged) return deleteIndexResponse.Acknowledged;
-                    await Log.WarningAsync(deleteIndexResponse.DebugInformation);
-                    await Log.ErrorAsync(deleteIndexResponse.OriginalException, deleteIndexResponse.ServerError.Error.Reason);
+                    _logger.Warning(deleteIndexResponse.DebugInformation);
+                    _logger.Error(deleteIndexResponse.OriginalException, deleteIndexResponse.ServerError.Error.Reason);
                     return deleteIndexResponse.Acknowledged;
                 case IndexResponse indexResponse:
                     if (indexResponse.IsValid) return indexResponse.IsValid;
-                    await Log.WarningAsync(indexResponse.DebugInformation);
-                    await Log.ErrorAsync(indexResponse.OriginalException, indexResponse.ServerError.Error.Reason);
+                    _logger.Warning(indexResponse.DebugInformation);
+                    _logger.Error(indexResponse.OriginalException, indexResponse.ServerError.Error.Reason);
                     return indexResponse.IsValid;
                 case CreateIndexResponse createIndexResponse:
                     if (createIndexResponse.IsValid) return createIndexResponse.IsValid;
-                    await Log.WarningAsync(createIndexResponse.DebugInformation);
-                    await Log.ErrorAsync(createIndexResponse.OriginalException, createIndexResponse.ServerError.Error.Reason);
+                    _logger.Warning(createIndexResponse.DebugInformation);
+                    _logger.Error(createIndexResponse.OriginalException, createIndexResponse.ServerError.Error.Reason);
                     return createIndexResponse.IsValid;
                 case FlushResponse flushResponse:
                     if (flushResponse.IsValid) return flushResponse.IsValid;
-                    await Log.WarningAsync(flushResponse.DebugInformation);
-                    await Log.ErrorAsync(flushResponse.OriginalException, flushResponse.ServerError.Error.Reason);
+                    _logger.Warning(flushResponse.DebugInformation);
+                    _logger.Error(flushResponse.OriginalException, flushResponse.ServerError.Error.Reason);
                     return flushResponse.IsValid;
                 case RefreshResponse refreshResponse:
                     if (refreshResponse.IsValid) return refreshResponse.IsValid;
-                    await Log.WarningAsync(refreshResponse.DebugInformation);
-                    await Log.ErrorAsync(refreshResponse.OriginalException, refreshResponse.ServerError.Error.Reason);
+                    _logger.Warning(refreshResponse.DebugInformation);
+                    _logger.Error(refreshResponse.OriginalException, refreshResponse.ServerError.Error.Reason);
                     return refreshResponse.IsValid;
                 case BulkResponse bulkResponse:
                     if (bulkResponse.IsValid)
                     {
-                        await Log.InfoAsync($"Successfully write {bulkResponse.Items.Count} documents to elastic");
+                        _logger.Information($"Successfully write {bulkResponse.Items.Count} documents to elastic");
                         return bulkResponse.IsValid;
                     }
-                    await Log.WarningAsync(bulkResponse.DebugInformation);
-                    await Log.ErrorAsync(bulkResponse.OriginalException, bulkResponse.ServerError.Error.Reason);
+
+                    _logger.Warning(bulkResponse.DebugInformation);
+                    _logger.Error(bulkResponse.OriginalException, bulkResponse.ServerError.Error.Reason);
                     return bulkResponse.IsValid;
                 default:
-                    await Log.WarningAsync($"Cannot find Conversion for type <{response.GetType().Name}>");
+                    _logger.Warning($"Cannot find Conversion for type <{response.GetType().Name}>");
                     return false;
             }
         }
-        
     }
 }

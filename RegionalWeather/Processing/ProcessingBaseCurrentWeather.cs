@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Configuration;
@@ -13,7 +14,7 @@ using RegionalWeather.Transport.Owm;
 
 namespace RegionalWeather.Processing
 {
-    public abstract class ProcessingBaseCurrentWeather : ProcessingBaseImplementations, IElasticConnection,
+    public abstract class ProcessingBaseCurrentWeather : IProcessingBaseImplementations, IElasticConnection,
         ILocationFileReader, IOwmApiReader, IFileStorage, IOwmToElasticDocumentConverter<CurrentWeatherBase>,
         IProcessingBase
     {
@@ -22,19 +23,26 @@ namespace RegionalWeather.Processing
         private readonly IOwmApiReader _owmApiReader;
         private readonly IFileStorage _fileStorage;
         private readonly IOwmToElasticDocumentConverter<CurrentWeatherBase> _owmConverter;
-
+        private readonly IProcessingBaseImplementations _processingBaseImplementations;
 
         protected ProcessingBaseCurrentWeather(IElasticConnection elasticConnection,
             ILocationFileReader locationFileReader,
             IOwmApiReader owmApiReader, IFileStorage fileStorage,
-            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter)
+            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter, IProcessingBaseImplementations processingBaseImplementations)
         {
             _elasticConnection = elasticConnection;
             _locationFileReader = locationFileReader;
             _owmApiReader = owmApiReader;
             _fileStorage = fileStorage;
             _owmConverter = owmToElasticDocumentConverter;
+            _processingBaseImplementations = processingBaseImplementations;
         }
+
+        public Task<Option<T>> DeserializeObjectAsync<T>(string data) =>
+            _processingBaseImplementations.DeserializeObjectAsync<T>(data);
+
+        public ParallelQuery<T> ConvertToParallelQuery<T>(IEnumerable<T> queryable, int parallelism) =>
+            _processingBaseImplementations.ConvertToParallelQuery(queryable, parallelism);
 
         public Task<bool> RefreshIndexAsync(string indexName) => _elasticConnection.RefreshIndexAsync(indexName);
 

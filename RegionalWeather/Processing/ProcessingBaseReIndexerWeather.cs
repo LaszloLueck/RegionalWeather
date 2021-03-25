@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Configuration;
@@ -7,24 +8,32 @@ using RegionalWeather.Elastic;
 using RegionalWeather.Owm.CurrentWeather;
 using RegionalWeather.Reindexing;
 using RegionalWeather.Transport.Elastic;
+using Serilog;
 
 namespace RegionalWeather.Processing
 {
-    public abstract class ProcessingBaseReIndexerWeather : ProcessingBaseImplementations, IDirectoryUtils, IElasticConnection,
+    public abstract class ProcessingBaseReIndexerWeather : IProcessingBaseImplementations, IDirectoryUtils, IElasticConnection,
         IOwmToElasticDocumentConverter<CurrentWeatherBase>, IProcessingBase
     {
         private readonly IElasticConnection _elasticConnection;
         private readonly IOwmToElasticDocumentConverter<CurrentWeatherBase> _owmDocumentConverter;
         private readonly IDirectoryUtils _directoryUtils;
-
+        private readonly IProcessingBaseImplementations _processingBaseImplementations;
 
         protected ProcessingBaseReIndexerWeather(IElasticConnection elasticConnection,
-            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmDocumentConverter, IDirectoryUtils directoryUtils)
+            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmDocumentConverter, IDirectoryUtils directoryUtils, IProcessingBaseImplementations processingBaseImplementations)
         {
             _elasticConnection = elasticConnection;
             _owmDocumentConverter = owmDocumentConverter;
             _directoryUtils = directoryUtils;
+            _processingBaseImplementations = processingBaseImplementations;
         }
+
+        public Task<Option<T>> DeserializeObjectAsync<T>(string data) =>
+            _processingBaseImplementations.DeserializeObjectAsync<T>(data);
+
+        public ParallelQuery<T> ConvertToParallelQuery<T>(IEnumerable<T> queryable, int parallelism) =>
+            _processingBaseImplementations.ConvertToParallelQuery(queryable, parallelism);
 
         public Task<bool> RefreshIndexAsync(string indexName) => _elasticConnection.RefreshIndexAsync(indexName);
 

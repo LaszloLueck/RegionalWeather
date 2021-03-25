@@ -5,39 +5,42 @@ using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
 using RegionalWeather.FileRead;
 using RegionalWeather.Filestorage;
-using RegionalWeather.Logging;
 using RegionalWeather.Owm.CurrentWeather;
 using RegionalWeather.Processing;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
+using Serilog;
 
 namespace RegionalWeather.Scheduler
 {
-    public class CurrentWeatherSchedulerJob : IJob
+    public abstract class CurrentWeatherSchedulerJob : IJob
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<CurrentWeatherSchedulerJob>.GetLogger();
-
         public async Task Execute(IJobExecutionContext context)
         {
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
+            var loggingBase = (ILogger) context.JobDetail.JobDataMap["loggingBase"];
+            var logger = loggingBase.ForContext<ReindexerSchedulerJobAirPollution>();
+            
             await Task.Run(async () =>
             {
-                await Log.InfoAsync("Use the following parameters for this job:");
-                await Log.InfoAsync($"Parallelism: {configuration.Parallelism}");
-                await Log.InfoAsync($"Runs every: {configuration.RunsEvery} s");
-                await Log.InfoAsync($"Path to Locations file: {configuration.PathToLocationsMap}");
-                await Log.InfoAsync($"Write to Elastic index: {configuration.ElasticIndexName}");
-                await Log.InfoAsync($"ElasticSearch: {configuration.ElasticHostsAndPorts}");
+                logger.Information("Use the following parameters for this job:");
+                logger.Information($"Parallelism: {configuration.Parallelism}");
+                logger.Information($"Runs every: {configuration.RunsEvery} s");
+                logger.Information($"Path to Locations file: {configuration.PathToLocationsMap}");
+                logger.Information($"Write to Elastic index: {configuration.ElasticIndexName}");
+                logger.Information($"ElasticSearch: {configuration.ElasticHostsAndPorts}");
                 
-                IFileStorage storage = new FileStorageImpl();
-                IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration);
-                ILocationFileReader locationReader = new LocationFileReaderImpl();
-                IOwmApiReader owmReader = new OwmApiReader();
-                IOwmToElasticDocumentConverter<CurrentWeatherBase> owmConverter = new OwmToElasticDocumentConverter();
-
+                IFileStorage storage = new FileStorageImpl(loggingBase);
+                IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration, loggingBase);
+                ILocationFileReader locationReader = new LocationFileReaderImpl(loggingBase);
+                IOwmApiReader owmReader = new OwmApiReader(loggingBase);
+                IOwmToElasticDocumentConverter<CurrentWeatherBase> owmConverter = new OwmToElasticDocumentConverter(loggingBase);
+                IProcessingBaseImplementations processingBaseImplementations =
+                    new ProcessingBaseImplementations(loggingBase);
+                
                 var processor =
                     new ProcessingBaseCurrentWeatherImpl(elasticConnection, locationReader, owmReader, storage,
-                        owmConverter);
+                        owmConverter, processingBaseImplementations);
 
 
                 await processor.Process(configuration);

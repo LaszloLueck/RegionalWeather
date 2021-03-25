@@ -2,9 +2,9 @@ using System;
 using System.Threading.Tasks;
 using Nest;
 using Optional;
-using RegionalWeather.Logging;
 using RegionalWeather.Owm.AirPollution;
 using RegionalWeather.Owm.CurrentWeather;
+using Serilog;
 
 namespace RegionalWeather.Elastic
 {
@@ -15,13 +15,17 @@ namespace RegionalWeather.Elastic
 
     public class AirPollutionToElasticDocumentConverter : IOwmToElasticDocumentConverter<AirPollutionBase>
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<AirPollutionToElasticDocumentConverter>
-            .GetLogger();
-        
+        private readonly ILogger _logger;
+
+        public AirPollutionToElasticDocumentConverter(ILogger loggingBase)
+        {
+            _logger = loggingBase.ForContext<AirPollutionToElasticDocumentConverter>();
+        }
+
         public async Task<Option<ElasticDocument>> ConvertAsync(AirPollutionBase owmDoc)
         {
             try
-            { 
+            {
                 var result = await Task.Run(() =>
                 {
                     var ret = new AirPollutionDocument {Id = Guid.NewGuid(), TimeStamp = owmDoc.ReadTime};
@@ -45,27 +49,32 @@ namespace RegionalWeather.Elastic
             }
             catch (Exception exception)
             {
-                await Log.ErrorAsync(exception, "Error while converting to Elastic Document");
+                _logger.Error(exception, "Error while converting to Elastic Document");
                 return Option.None<ElasticDocument>();
             }
         }
     }
-    
-    
+
+
     public class OwmToElasticDocumentConverter : IOwmToElasticDocumentConverter<CurrentWeatherBase>
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<OwmToElasticDocumentConverter>.GetLogger();
-        
+        private readonly ILogger _logger;
+
+        public OwmToElasticDocumentConverter(ILogger loggingBase)
+        {
+            _logger = loggingBase.ForContext<OwmToElasticDocumentConverter>();
+        }
+
         public async Task<Option<ElasticDocument>> ConvertAsync(CurrentWeatherBase owmDoc)
         {
             try
             {
                 var result = await Task.Run(() => Convert(owmDoc));
-                return Option.Some((ElasticDocument)result);
+                return Option.Some((ElasticDocument) result);
             }
             catch (Exception exception)
             {
-                await Log.ErrorAsync(exception, "Error while converting to Elastic Document");
+                _logger.Error(exception, "Error while converting to Elastic Document");
                 return Option.None<ElasticDocument>();
             }
         }
@@ -108,12 +117,11 @@ namespace RegionalWeather.Elastic
 
             var wnd = new Wind
             {
-                Direction = owmDoc.Wind.Deg, 
+                Direction = owmDoc.Wind.Deg,
                 Speed = Math.Round(owmDoc.Wind.Speed, 2),
                 Gust = Math.Round(owmDoc.Wind.Gust, 2)
             };
             etl.Wind = wnd;
-
 
 
             var rain = new Rain();
@@ -129,7 +137,7 @@ namespace RegionalWeather.Elastic
                 rain.OneHour = 0;
                 rain.ThreeHour = 0;
             }
-            
+
             etl.Rain = rain;
 
             var snow = new Snow();
@@ -145,7 +153,7 @@ namespace RegionalWeather.Elastic
             }
 
             etl.Snow = snow;
-            
+
             etl.LocationId = owmDoc.Id;
             etl.LocationName = owmDoc.Name;
             etl.GeoLocation = new GeoLocation(owmDoc.Coord.Lat, owmDoc.Coord.Lon);

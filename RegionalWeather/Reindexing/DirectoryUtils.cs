@@ -2,12 +2,19 @@
 using System.Collections.Generic;
 using System.IO;
 using RegionalWeather.Logging;
+using Serilog;
 
 namespace RegionalWeather.Reindexing
 {
     public class DirectoryUtils : IDirectoryUtils
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<DirectoryUtils>.GetLogger();
+        private readonly ILogger _logger;
+
+        public DirectoryUtils(ILogger loggingBase)
+        {
+            _logger = loggingBase.ForContext<DirectoryUtils>();
+        }
+        
         
         public bool DirectoryExists(string path)
         {
@@ -28,7 +35,7 @@ namespace RegionalWeather.Reindexing
             }
             catch (Exception exception)
             {
-                Log.Error(exception, $"error while creating the directory {path}");
+                _logger.Error(exception, $"error while creating the directory {path}");
                 return false;
             }
         }
@@ -43,7 +50,7 @@ namespace RegionalWeather.Reindexing
             }
             catch (Exception exception)
             {
-                Log.Error(exception, $"error while getting files in directory {path} with pattern {filePattern}");
+                _logger.Error(exception, $"error while getting files in directory {path} with pattern {filePattern}");
                 return new List<string>();
             }
         }
@@ -57,7 +64,7 @@ namespace RegionalWeather.Reindexing
             }
             catch (Exception exception)
             {
-                Log.Error(exception, $"error while deleting a file {path}");
+                _logger.Error(exception, $"error while deleting a file {path}");
                 return false;
             }
         }
