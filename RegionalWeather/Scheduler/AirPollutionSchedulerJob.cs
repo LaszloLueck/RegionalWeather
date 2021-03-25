@@ -13,13 +13,13 @@ using Serilog;
 
 namespace RegionalWeather.Scheduler
 {
-    public abstract class AirPollutionSchedulerJob : IJob
+    public class AirPollutionSchedulerJob : IJob
     {
         public async Task Execute(IJobExecutionContext context)
         {
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
             var loggingBase = (ILogger) context.JobDetail.JobDataMap["loggingBase"];
-            var logger = loggingBase.ForContext<ReindexerSchedulerJobAirPollution>();
+            var logger = loggingBase.ForContext<AirPollutionSchedulerJob>();
 
             await Task.Run(async () =>
             {

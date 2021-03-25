@@ -10,7 +10,7 @@ using Serilog;
 
 namespace RegionalWeather.Scheduler
 {
-    public abstract class ReindexerSchedulerJobAirPollution : IJob
+    public class ReindexerSchedulerJobAirPollution : IJob
     {
         public async Task Execute(IJobExecutionContext context)
         {

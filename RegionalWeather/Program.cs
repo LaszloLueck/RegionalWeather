@@ -51,8 +51,7 @@ namespace RegionalWeather
                             await currentWeatherReindexerFactory.RunScheduler();
                             await airPollutionSchedulerFactory.RunScheduler();
                             await airPollutionReindexerFactory.RunScheduler();
-                            await Log.InfoAsync("App is in running state!");
-                            serilogLogger.Dispose();
+                            logForThisClass.Information("App is in running state!");
                         });
                     });
                     return Task.Delay(-1);
