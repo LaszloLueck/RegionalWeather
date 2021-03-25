@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using RegionalWeather.Logging;
+using Serilog;
 
 namespace RegionalWeather.Filestorage
 {
@@ -15,7 +16,12 @@ namespace RegionalWeather.Filestorage
 
     public class FileStorageImpl : IFileStorage
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<FileStorageImpl>.GetLogger();
+        private readonly ILogger _logger;
+
+        public FileStorageImpl(ILogger loggingBase)
+        {
+            _logger = loggingBase.ForContext<FileStorageImpl>();
+        }
 
         public async Task WriteAllDataAsync<T>(IEnumerable<T> roots, string fileName)
         {
@@ -30,7 +36,7 @@ namespace RegionalWeather.Filestorage
                     str.Position = 0;
                     await streamWriter.WriteLineAsync(await new StreamReader(str).ReadToEndAsync());
                 });
-                await Log.InfoAsync($"Successfully write {enumerable.Count} lines to file");
+                _logger.Information($"Successfully write {enumerable.Count} lines to file");
                 await streamWriter.FlushAsync();
                 await streamWriter.DisposeAsync();
             });

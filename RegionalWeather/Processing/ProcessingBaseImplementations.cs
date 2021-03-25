@@ -8,16 +8,28 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Logging;
+using Serilog;
 
 namespace RegionalWeather.Processing
 {
-    public class ProcessingBaseImplementations
+
+    public interface IProcessingBaseImplementations
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ProcessingBaseImplementations>.GetLogger();
-      
-        protected ProcessingBaseImplementations(){}
+        public Task<Option<T>> DeserializeObjectAsync<T>(string data);
+
+        public ParallelQuery<T> ConvertToParallelQuery<T>(IEnumerable<T> queryable, int parallelism);
+    }
+    
+    public class ProcessingBaseImplementations : IProcessingBaseImplementations
+    {
+        private readonly ILogger _logger;
+
+        public ProcessingBaseImplementations(ILogger loggingBase)
+        {
+            _logger = loggingBase.ForContext<ProcessingBaseImplementations>();
+        }
         
-        protected static async Task<Option<T>> DeserializeObjectAsync<T>(string data)
+        public async Task<Option<T>> DeserializeObjectAsync<T>(string data)
         {
             try
             {
@@ -30,12 +42,12 @@ namespace RegionalWeather.Processing
             }
             catch (Exception exception)
             {
-                await Log.ErrorAsync(exception, "Error while converting line to object");
+                _logger.Error(exception, "Error while converting line to object");
                 return await Task.Run(Option.None<T>);
             }
         }
         
-        protected static ParallelQuery<T> ConvertToParallelQuery<T>(IEnumerable<T> queryable, int parallelism)
+        public ParallelQuery<T> ConvertToParallelQuery<T>(IEnumerable<T> queryable, int parallelism)
         {
             return queryable
                 .AsParallel()

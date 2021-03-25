@@ -11,7 +11,8 @@ namespace RegionalWeather.Configuration
     public sealed record ConfigurationItems(string OwmApiKey, int RunsEvery, string PathToLocationsMap,
         int Parallelism, string ElasticHostsAndPorts, string ElasticIndexName, string FileStorageTemplate,
         int ReindexLookupEvery, string ReindexLookupPath, int AirPollutionRunsEvery, string AirPollutionIndexName,
-        string AirPollutionLocationsFile, string AirPollutionFileStoragePath);
+        string AirPollutionLocationsFile, string AirPollutionFileStoragePath, bool LogToElasticSearch,
+        string ElasticSearchLogIndexName);
 
     public enum EnvEntries
     {
@@ -27,7 +28,9 @@ namespace RegionalWeather.Configuration
         AirPollutionRunsEvery,
         AirPollutionIndexName,
         AirPollutionLocationsFile,
-        AirPollutionFileStoragePath
+        AirPollutionFileStoragePath,
+        LogToElasticSearch,
+        ElasticSearchLogIndexName
     }
 
     public class ConfigurationBuilder
@@ -73,10 +76,14 @@ namespace RegionalWeather.Configuration
                     .AirPollutionLocationsFile)
                 from airPollutionFileStoragePath in _configurationFactory.ReadEnvironmentVariableString(EnvEntries
                     .AirPollutionFileStoragePath)
+                from logToElasticSearch in _configurationFactory.ReadEnvironmentVariableBool(EnvEntries
+                    .LogToElasticSearch)
+                from elasticSearchLogIndexName in _configurationFactory.ReadEnvironmentVariableString(EnvEntries
+                    .ElasticSearchLogIndexName)
                 select new ConfigurationItems(owmApiKey, runsEvery, pathToLocationsMap, parallelism,
                     elasticHostsAndPorts, elasticIndexName, fileStorageTemplate, reindexLookupEvery, reindexLookupPath,
                     airPollutionRunsEvery, airPollutionIndexName, airPollutionLocationsFile,
-                    airPollutionFileStoragePath);
+                    airPollutionFileStoragePath, logToElasticSearch, elasticSearchLogIndexName);
         }
     }
 }

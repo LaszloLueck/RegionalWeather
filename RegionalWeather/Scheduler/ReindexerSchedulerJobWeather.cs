@@ -7,25 +7,31 @@ using RegionalWeather.Owm.CurrentWeather;
 using RegionalWeather.Processing;
 using RegionalWeather.Reindexing;
 using RegionalWeather.Transport.Elastic;
+using Serilog;
 
 namespace RegionalWeather.Scheduler
 {
     public class ReindexerSchedulerJobWeather : IJob
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ReindexerSchedulerJobWeather>.GetLogger();
-
         public async Task Execute(IJobExecutionContext context)
         {
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
+            var loggingBase = (ILogger) context.JobDetail.JobDataMap["loggingBase"];
+            var logger = loggingBase.ForContext<ReindexerSchedulerJobWeather>();
+
             await Task.Run(async () =>
             {
-                await Log.InfoAsync("Check if any reindex job todo.");
-                IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration);
-                IOwmToElasticDocumentConverter<CurrentWeatherBase> owmConverter = new OwmToElasticDocumentConverter();
-                IDirectoryUtils directoryUtils = new DirectoryUtils();
+                logger.Information("Check if any reindex job todo.");
+                IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration, loggingBase);
+                IOwmToElasticDocumentConverter<CurrentWeatherBase> owmConverter =
+                    new OwmToElasticDocumentConverter(loggingBase);
+                IDirectoryUtils directoryUtils = new DirectoryUtils(loggingBase);
+                IProcessingBaseImplementations processingBaseImplementations =
+                    new ProcessingBaseImplementations(loggingBase);
 
                 var processor =
-                    new ProcessingBaseReIndexerWeatherImpl(elasticConnection, owmConverter, directoryUtils);
+                    new ProcessingBaseReIndexerWeatherImpl(elasticConnection, owmConverter, directoryUtils, loggingBase,
+                        processingBaseImplementations);
 
                 await processor.Process(configuration);
             });

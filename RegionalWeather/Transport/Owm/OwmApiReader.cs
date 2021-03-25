@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Logging;
+using Serilog;
 
 namespace RegionalWeather.Transport.Owm
 {
@@ -15,7 +16,12 @@ namespace RegionalWeather.Transport.Owm
     
     public class OwmApiReader : IOwmApiReader
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<OwmApiReader>.GetLogger();
+        private readonly ILogger _logger;
+
+        public OwmApiReader(ILogger loggingBase)
+        {
+            _logger = loggingBase.ForContext<OwmApiReader>();
+        }
 
         public async Task<Option<string>> ReadDataFromLocationAsync(string url)
         {
@@ -25,7 +31,7 @@ namespace RegionalWeather.Transport.Owm
             }
             catch (Exception exception)
             {
-                await Log.ErrorAsync(exception, $"Error while getting weather information for url {url}");
+                _logger.Error(exception, $"Error while getting weather information for url {url}");
                 return await Task.Run(Option.None<string>);
             }
         } 

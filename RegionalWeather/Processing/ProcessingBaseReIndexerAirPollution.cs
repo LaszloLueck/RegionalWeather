@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Configuration;
@@ -10,22 +11,30 @@ using RegionalWeather.Transport.Elastic;
 
 namespace RegionalWeather.Processing
 {
-    public abstract class ProcessingBaseReIndexerAirPollution : ProcessingBaseImplementations, IDirectoryUtils,
+    public abstract class ProcessingBaseReIndexerAirPollution : IProcessingBaseImplementations, IDirectoryUtils,
         IElasticConnection,
         IOwmToElasticDocumentConverter<AirPollutionBase>, IProcessingBase
     {
         private readonly IElasticConnection _elasticConnection;
         private readonly IOwmToElasticDocumentConverter<AirPollutionBase> _owmDocumentConverter;
         private readonly IDirectoryUtils _directoryUtils;
+        private readonly IProcessingBaseImplementations _processingBaseImplementations;
 
 
         protected ProcessingBaseReIndexerAirPollution(IElasticConnection elasticConnection,
-            IOwmToElasticDocumentConverter<AirPollutionBase> owmDocumentConverter, IDirectoryUtils directoryUtils)
+            IOwmToElasticDocumentConverter<AirPollutionBase> owmDocumentConverter, IDirectoryUtils directoryUtils, IProcessingBaseImplementations processingBaseImplementations)
         {
             _elasticConnection = elasticConnection;
             _owmDocumentConverter = owmDocumentConverter;
             _directoryUtils = directoryUtils;
+            _processingBaseImplementations = processingBaseImplementations;
         }
+
+        public Task<Option<T>> DeserializeObjectAsync<T>(string data) =>
+            _processingBaseImplementations.DeserializeObjectAsync<T>(data);
+
+        public ParallelQuery<T> ConvertToParallelQuery<T>(IEnumerable<T> queryable, int parallelism) =>
+            _processingBaseImplementations.ConvertToParallelQuery(queryable, parallelism);
 
         public Task<Option<ElasticDocument>> ConvertAsync(AirPollutionBase owmDoc) =>
             _owmDocumentConverter.ConvertAsync(owmDoc);

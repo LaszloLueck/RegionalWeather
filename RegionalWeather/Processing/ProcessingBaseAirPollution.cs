@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Optional;
 using RegionalWeather.Configuration;
@@ -9,10 +10,11 @@ using RegionalWeather.Filestorage;
 using RegionalWeather.Owm.AirPollution;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
+using Serilog;
 
 namespace RegionalWeather.Processing
 {
-    public abstract class ProcessingBaseAirPollution : ProcessingBaseImplementations, IElasticConnection,
+    public abstract class ProcessingBaseAirPollution : IProcessingBaseImplementations, IElasticConnection,
         ILocationFileReader, IProcessingBase, IOwmApiReader, IFileStorage,
         IOwmToElasticDocumentConverter<AirPollutionBase>
     {
@@ -21,17 +23,25 @@ namespace RegionalWeather.Processing
         private readonly IFileStorage _fileStorage;
         private readonly IOwmApiReader _owmApiReader;
         private readonly IOwmToElasticDocumentConverter<AirPollutionBase> _owmToElasticDocumentConverter;
+        private readonly IProcessingBaseImplementations _processingBaseImplementations;
 
         protected ProcessingBaseAirPollution(IElasticConnection elasticConnection,
             ILocationFileReader locationFileReader, IFileStorage fileStorage,
-            IOwmApiReader owmApiReader, IOwmToElasticDocumentConverter<AirPollutionBase> owmToElasticDocumentConverter)
+            IOwmApiReader owmApiReader, IOwmToElasticDocumentConverter<AirPollutionBase> owmToElasticDocumentConverter, IProcessingBaseImplementations processingBaseImplementations)
         {
             _elasticConnection = elasticConnection;
             _locationFileReader = locationFileReader;
             _fileStorage = fileStorage;
             _owmApiReader = owmApiReader;
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
+            _processingBaseImplementations = processingBaseImplementations;
         }
+
+        public Task<Option<T>> DeserializeObjectAsync<T>(string data) =>
+            _processingBaseImplementations.DeserializeObjectAsync<T>(data);
+
+        public ParallelQuery<T> ConvertToParallelQuery<T>(IEnumerable<T> queryable, int parallelism) =>
+            _processingBaseImplementations.ConvertToParallelQuery(queryable, parallelism);
 
         public Task<bool> RefreshIndexAsync(string indexName) => _elasticConnection.RefreshIndexAsync(indexName);
 
