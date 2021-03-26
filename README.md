@@ -63,6 +63,15 @@ networks:
 Explanations follows, too tired atm.
 
 ## Changes
+### 2021-03-26
+Next update is here. This update contains a change in logging concept.
+So far, logging has only been done via the console with standard .NET board resources. The Docker container is started in such a way that after a log size of 200 KB the oldest entries are lost (log rotation). However, if errors occurred, this means that you have no way of tracking them if the log limit is exceeded. Now you could also write the logs to files, which makes the search for certain entries complicated. That's why I rewritten the application so that log entries are also written to Elasticsearch. 
+
+Why? 
+
+Elasticsearch is already in use for storing weather data and it is a powerful search index for searching over large amounts of data. 
+
+
 ### 2021-03-08
 Today comes a big update.
 - A bunch of dependency bumps to current versions
