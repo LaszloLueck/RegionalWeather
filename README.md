@@ -60,7 +60,11 @@ networks:
       name: static-net
 ```
 
-Explanations follows, too tired atm.
+#### Explanation
+Next, i will describe the parameters in the environment section.
+- RunsEvery => Value in seconds. Duration how often the data from the weatherlocations would be refreshed.
+- Parallelism => Value in integer. It depends on your hardware which value is the best. On a raspi pi i think 2 is a appropriate value. On my machine (24 Westmere Cores) a value of 5 is good.
+- PathToLocationsMap => Value in string. 
 
 ## Changes
 ### 2021-03-26
