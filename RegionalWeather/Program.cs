@@ -22,17 +22,16 @@ namespace RegionalWeather
 
             IConfigurationFactory configurationFactory = new ConfigurationFactory();
 
-            var foo = await new ConfigurationBuilder(configurationFactory).GetConfigurationAsync();
+            var startupObjectOpt =
+                from configuration in await new ConfigurationBuilder(configurationFactory).GetConfigurationAsync()
+                from seriLogger in SerilogLoggerFactory.BuildLogger(configuration)
+                select new Tuple<ConfigurationItems, ILogger>(configuration, seriLogger);
 
-            var l = from configuration in foo
-                from seri in SerilogLoggerFactory.BuildLogger(configuration)
-                select new Tuple<ConfigurationItems, ILogger>(configuration, seri);
-
-            var mainTask = l.Map(tpl =>
+            var mainTask = startupObjectOpt.Map(tpl =>
             {
                 var configuration = tpl.Item1;
                 var serilogLogger = tpl.Item2;
-                
+
                 Task.Run(async () =>
                 {
                     var logForThisClass = serilogLogger.ForContext<Program>();
@@ -46,13 +45,13 @@ namespace RegionalWeather
                             "reIndexerGroup",
                             "reIndexerTrigger", 5, configuration.ReindexLookupEvery, configuration,
                             serilogLogger);
-                    
+
                     ISchedulerFactory airPollutionSchedulerFactory =
                         new CustomSchedulerFactory<AirPollutionSchedulerJob>("airPollutionJob",
                             "airPollutionGroup",
                             "airPollutionTrigger", 15, configuration.AirPollutionRunsEvery, configuration,
                             serilogLogger);
-                    
+
                     ISchedulerFactory airPollutionReindexerFactory =
                         new CustomSchedulerFactory<ReindexerSchedulerJobAirPollution>(
                             "reindexerAirPollutionJob",
@@ -64,7 +63,6 @@ namespace RegionalWeather
                     await airPollutionSchedulerFactory.RunScheduler();
                     await airPollutionReindexerFactory.RunScheduler();
                     logForThisClass.Information("App is in running state!");
-                    
                 });
                 return Task.Delay(-1);
             }).ValueOr(() => Task.CompletedTask);
