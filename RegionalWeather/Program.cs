@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
+using Optional;
 using Optional.Linq;
 using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
@@ -26,16 +28,16 @@ namespace RegionalWeather
                 from configuration in await new ConfigurationBuilder(configurationFactory).GetConfigurationAsync()
                 from seriLogger in SerilogLoggerFactory.BuildLogger(configuration)
                 select new Tuple<ConfigurationItems, ILogger>(configuration, seriLogger);
-
+            
             var mainTask = startupObjectOpt.Map(tpl =>
             {
                 var configuration = tpl.Item1;
                 var serilogLogger = tpl.Item2;
+                var logForThisClass = serilogLogger.ForContext<Program>();
+                logForThisClass.Information("Build up the scheduler");
 
                 Task.Run(async () =>
                 {
-                    var logForThisClass = serilogLogger.ForContext<Program>();
-                    logForThisClass.Information("Build up the scheduler");
                     ISchedulerFactory currentWeatherSchedulerFactory =
                         new CustomSchedulerFactory<CurrentWeatherSchedulerJob>("currentWeatherJob",
                             "currentWeatherGroup", "currentWeatherTrigger", 10, configuration.RunsEvery,
