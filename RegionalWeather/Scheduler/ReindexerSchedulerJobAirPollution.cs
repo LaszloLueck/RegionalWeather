@@ -27,10 +27,13 @@ namespace RegionalWeather.Scheduler
                 IDirectoryUtils directoryUtils = new DirectoryUtils(loggingBase);
                 IProcessingBaseImplementations processingBaseImplementations =
                     new ProcessingBaseImplementations(loggingBase);
-                var processor =
-                    new ProcessingBaseReIndexerAirPollutionImpl(elasticConnection, owmConverter, directoryUtils,
-                        loggingBase, processingBaseImplementations);
-                await processor.Process(configuration);
+
+                var processor = new ProcessingBaseReIndexerGenericImpl<AirPollutionBase>(elasticConnection,
+                    owmConverter, directoryUtils, loggingBase, processingBaseImplementations);
+
+                await processor.Process<AirPollutionDocument>(configuration, configuration.AirPollutionIndexName,
+                    "AirPollution_*.dat", "AirPollution_", ".dat");
+
             });
         }
     }

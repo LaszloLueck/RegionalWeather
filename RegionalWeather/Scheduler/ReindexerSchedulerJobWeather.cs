@@ -29,11 +29,12 @@ namespace RegionalWeather.Scheduler
                 IProcessingBaseImplementations processingBaseImplementations =
                     new ProcessingBaseImplementations(loggingBase);
 
-                var processor =
-                    new ProcessingBaseReIndexerWeatherImpl(elasticConnection, owmConverter, directoryUtils, loggingBase,
-                        processingBaseImplementations);
+                var processor = new ProcessingBaseReIndexerGenericImpl<CurrentWeatherBase>(elasticConnection,
+                    owmConverter, directoryUtils, loggingBase, processingBaseImplementations);
 
-                await processor.Process(configuration);
+                await processor.Process<WeatherLocationDocument>(configuration, configuration.ElasticIndexName,
+                    "FileStorage_*.dat", "FileStorage_", ".dat");
+
             });
         }
     }

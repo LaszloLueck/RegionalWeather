@@ -15,32 +15,43 @@ using Serilog;
 
 namespace RegionalWeather.Processing
 {
-    public class ProcessingBaseCurrentWeatherImpl : ProcessingBaseCurrentWeather
+    public class ProcessingBaseCurrentWeatherImpl
     {
+        private readonly IElasticConnection _elasticConnection;
+        private readonly ILocationFileReader _locationFileReader;
+        private readonly IOwmApiReader _owmApiReader;
+        private readonly IFileStorage _fileStorage;
+        private readonly IOwmToElasticDocumentConverter<CurrentWeatherBase> _owmToElasticDocumentConverter;
+        private readonly IProcessingBaseImplementations _processingBaseImplementations;
+        
         public ProcessingBaseCurrentWeatherImpl(IElasticConnection elasticConnection,
             ILocationFileReader locationFileReader, IOwmApiReader owmApiReader, IFileStorage fileStorage,
-            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter, IProcessingBaseImplementations processingBaseImplementations) : base(elasticConnection,
-            locationFileReader,
-            owmApiReader, fileStorage, owmToElasticDocumentConverter, processingBaseImplementations)
+            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter, IProcessingBaseImplementations processingBaseImplementations)
         {
+            _elasticConnection = elasticConnection;
+            _locationFileReader = locationFileReader;
+            _owmApiReader = owmApiReader;
+            _fileStorage = fileStorage;
+            _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
+            _processingBaseImplementations = processingBaseImplementations;
         }
 
-        public override async Task Process(ConfigurationItems configuration)
+        public async Task Process(ConfigurationItems configuration)
         {
             var locationList =
-                (await ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(new List<string>());
-            var rootTasksOption = ConvertToParallelQuery(locationList, configuration.Parallelism)
+                (await _locationFileReader.ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(new List<string>());
+            var rootTasksOption = _processingBaseImplementations.ConvertToParallelQuery(locationList, configuration.Parallelism)
                 .Select(async location =>
                 {
                     var url =
                         $"https://api.openweathermap.org/data/2.5/weather?{location}&APPID={configuration.OwmApiKey}&units=metric";
-                    return await ReadDataFromLocationAsync(url);
+                    return await _owmApiReader.ReadDataFromLocationAsync(url);
                 });
 
             var rootOptions = (await Task.WhenAll(rootTasksOption)).Values();
 
-            var rootStrings = ConvertToParallelQuery(rootOptions, configuration.Parallelism)
-                .Select(async rootString => await DeserializeObjectAsync<CurrentWeatherBase>(rootString));
+            var rootStrings = _processingBaseImplementations.ConvertToParallelQuery(rootOptions, configuration.Parallelism)
+                .Select(async rootString => await _processingBaseImplementations.DeserializeObjectAsync<CurrentWeatherBase>(rootString));
 
 
             var readTime = DateTime.Now;
@@ -56,23 +67,23 @@ namespace RegionalWeather.Processing
             var storeFileName =
                 configuration.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
 
-            await WriteAllDataAsync(concurrentBag, storeFileName);
+            await _fileStorage.WriteAllDataAsync(concurrentBag, storeFileName);
 
-            var elasticDocsTasks = ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
-                .Select(async rootDoc => await ConvertAsync(rootDoc));
+            var elasticDocsTasks = _processingBaseImplementations.ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
+                .Select(async rootDoc => await _owmToElasticDocumentConverter.ConvertAsync(rootDoc));
 
             var elasticDocs = (await Task.WhenAll(elasticDocsTasks))
                 .Values();
 
-            var indexName = BuildIndexName(configuration.ElasticIndexName, readTime);
-            if (!await IndexExistsAsync(indexName))
+            var indexName = _elasticConnection.BuildIndexName(configuration.ElasticIndexName, readTime);
+            if (!await _elasticConnection.IndexExistsAsync(indexName))
             {
-                await CreateIndexAsync<WeatherLocationDocument>(indexName);
-                await RefreshIndexAsync(indexName);
-                await FlushIndexAsync(indexName);
+                await _elasticConnection.CreateIndexAsync<WeatherLocationDocument>(indexName);
+                await _elasticConnection.RefreshIndexAsync(indexName);
+                await _elasticConnection.FlushIndexAsync(indexName);
             }
 
-            await BulkWriteDocumentsAsync(elasticDocs, indexName);
+            await _elasticConnection.BulkWriteDocumentsAsync(elasticDocs, indexName);
         }
     }
 }
