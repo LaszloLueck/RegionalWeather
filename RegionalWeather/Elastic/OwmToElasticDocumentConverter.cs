@@ -26,7 +26,6 @@ namespace RegionalWeather.Elastic
         {
             try
             {
-                _logger.Information($"try to convert airpollution document for location {owmDoc.LocationName} on {owmDoc.ReadTime}");
                 var result = await Task.Run(() =>
                 {
                     var ret = new AirPollutionDocument {Id = Guid.NewGuid(), TimeStamp = owmDoc.ReadTime};
@@ -70,7 +69,6 @@ namespace RegionalWeather.Elastic
         {
             try
             {
-                _logger.Information($"try to convert current weather document for location {owmDoc.Name} on {owmDoc.ReadTime}");
                 var result = await Task.Run(() => Convert(owmDoc));
                 return Option.Some((ElasticDocument) result);
             }

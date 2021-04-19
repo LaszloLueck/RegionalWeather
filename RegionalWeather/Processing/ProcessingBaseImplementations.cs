@@ -33,7 +33,6 @@ namespace RegionalWeather.Processing
         {
             try
             {
-                _logger.Information($"try to deserialize an object of type {typeof(T)} from string with size {data.Length} bytes");
                 await using MemoryStream stream = new();
                 var bt = Encoding.UTF8.GetBytes(data);
                 await stream.WriteAsync(bt.AsMemory(0, bt.Length));

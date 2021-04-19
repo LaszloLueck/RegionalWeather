@@ -84,7 +84,7 @@ namespace RegionalWeather.Processing
 
                             var convertedIndexDocs = (await Task.WhenAll(convertedIndexDocsTasks)).Values();
 
-                            var indexName = _elasticConnection.BuildIndexName(configuration.AirPollutionIndexName,
+                            var usedIndexName = _elasticConnection.BuildIndexName(indexName,
                                 GenerateIndexDateFromFileName(file, filPrefix, fileSuffix));
 
                             convertedIndexDocs
@@ -92,9 +92,9 @@ namespace RegionalWeather.Processing
                                 .GroupBy(g => g.index / 100, o => o.owm)
                                 .ToList()
                                 .ForEach(async group =>
-                                    await _elasticConnection.BulkWriteDocumentsAsync(group, indexName));
+                                    await _elasticConnection.BulkWriteDocumentsAsync(group, usedIndexName));
 
-                            await _elasticConnection.FlushIndexAsync(indexName);
+                            await _elasticConnection.FlushIndexAsync(usedIndexName);
                             _logger.Information($"Remove the file <{file}> after indexing");
                             await Task.Run(() => _directoryUtils.DeleteFile(file));
                         });
