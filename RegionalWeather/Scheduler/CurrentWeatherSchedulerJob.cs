@@ -40,7 +40,7 @@ namespace RegionalWeather.Scheduler
                 
                 var processor =
                     new ProcessingBaseCurrentWeatherImpl(elasticConnection, locationReader, owmReader, storage,
-                        owmConverter, processingBaseImplementations);
+                        owmConverter, processingBaseImplementations, loggingBase);
 
 
                 await processor.Process(configuration);

@@ -23,10 +23,12 @@ namespace RegionalWeather.Processing
         private readonly IFileStorage _fileStorage;
         private readonly IOwmToElasticDocumentConverter<CurrentWeatherBase> _owmToElasticDocumentConverter;
         private readonly IProcessingBaseImplementations _processingBaseImplementations;
-        
+        private readonly ILogger _logger;
+
         public ProcessingBaseCurrentWeatherImpl(IElasticConnection elasticConnection,
             ILocationFileReader locationFileReader, IOwmApiReader owmApiReader, IFileStorage fileStorage,
-            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter, IProcessingBaseImplementations processingBaseImplementations)
+            IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter,
+            IProcessingBaseImplementations processingBaseImplementations, ILogger loggingBase)
         {
             _elasticConnection = elasticConnection;
             _locationFileReader = locationFileReader;
@@ -34,15 +36,18 @@ namespace RegionalWeather.Processing
             _fileStorage = fileStorage;
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
             _processingBaseImplementations = processingBaseImplementations;
+            _logger = loggingBase.ForContext<ProcessingBaseCurrentWeatherImpl>();
         }
 
         public async Task Process(ConfigurationItems configuration)
         {
+            _logger.Information("try to read weatherinformations");
             var locationList =
                 (await _locationFileReader.ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(new List<string>());
             var rootTasksOption = _processingBaseImplementations.ConvertToParallelQuery(locationList, configuration.Parallelism)
                 .Select(async location =>
                 {
+                    _logger.Information($"get weatherinformations for location {location}");
                     var url =
                         $"https://api.openweathermap.org/data/2.5/weather?{location}&APPID={configuration.OwmApiKey}&units=metric";
                     return await _owmApiReader.ReadDataFromLocationAsync(url);
@@ -76,6 +81,8 @@ namespace RegionalWeather.Processing
                 .Values();
 
             var indexName = _elasticConnection.BuildIndexName(configuration.ElasticIndexName, readTime);
+            _logger.Information($"write weatherdata to index {indexName}");
+            
             if (!await _elasticConnection.IndexExistsAsync(indexName))
             {
                 await _elasticConnection.CreateIndexAsync<WeatherLocationDocument>(indexName);
