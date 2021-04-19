@@ -27,6 +27,7 @@ namespace RegionalWeather.Filestorage
         {
             await Task.Run(async () =>
             {
+                _logger.Information($"write entries of type {typeof(T)} to file {fileName}");
                 await using StreamWriter streamWriter = new StreamWriter(fileName, true, Encoding.UTF8, 32768);
                 var enumerable = roots.ToList();
                 enumerable.ToList().ForEach(async root =>

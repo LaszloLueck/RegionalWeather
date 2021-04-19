@@ -37,6 +37,7 @@ namespace RegionalWeather.Processing
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
             _processingBaseImplementations = processingBaseImplementations;
             _logger = loggingBase.ForContext<ProcessingBaseCurrentWeatherImpl>();
+            _logger.Information("Begin with etl process of weather information for locations.");
         }
 
         public async Task Process(ConfigurationItems configuration)
@@ -47,7 +48,7 @@ namespace RegionalWeather.Processing
             var rootTasksOption = _processingBaseImplementations.ConvertToParallelQuery(locationList, configuration.Parallelism)
                 .Select(async location =>
                 {
-                    _logger.Information($"get weatherinformations for location {location}");
+                    _logger.Information($"get weather information for configured {location}");
                     var url =
                         $"https://api.openweathermap.org/data/2.5/weather?{location}&APPID={configuration.OwmApiKey}&units=metric";
                     return await _owmApiReader.ReadDataFromLocationAsync(url);
@@ -60,6 +61,7 @@ namespace RegionalWeather.Processing
 
 
             var readTime = DateTime.Now;
+            _logger.Information($"define document timestamp for elastic is {readTime}");
             var toElastic = (await Task.WhenAll(rootStrings))
                 .Values()
                 .Select(item =>
@@ -69,6 +71,7 @@ namespace RegionalWeather.Processing
                 });
 
             var concurrentBag = new ConcurrentBag<CurrentWeatherBase>(toElastic);
+            
             var storeFileName =
                 configuration.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
 
@@ -81,7 +84,7 @@ namespace RegionalWeather.Processing
                 .Values();
 
             var indexName = _elasticConnection.BuildIndexName(configuration.ElasticIndexName, readTime);
-            _logger.Information($"write weatherdata to index {indexName}");
+            _logger.Information($"write weather data to index {indexName}");
             
             if (!await _elasticConnection.IndexExistsAsync(indexName))
             {
