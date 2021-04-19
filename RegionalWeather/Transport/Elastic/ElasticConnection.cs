@@ -159,7 +159,7 @@ namespace RegionalWeather.Transport.Elastic
                 case BulkResponse bulkResponse:
                     if (bulkResponse.IsValid)
                     {
-                        _logger.Information($"Successfully write {bulkResponse.Items.Count} documents to elastic");
+                        _logger.Information($"Successfully written {bulkResponse.Items.Count} documents to elastic");
                         return bulkResponse.IsValid;
                     }
 
