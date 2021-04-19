@@ -11,6 +11,7 @@ using RegionalWeather.Filestorage;
 using RegionalWeather.Owm.AirPollution;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
+using Serilog;
 
 namespace RegionalWeather.Processing
 {
@@ -22,10 +23,11 @@ namespace RegionalWeather.Processing
         private readonly IFileStorage _fileStorage;
         private readonly IOwmToElasticDocumentConverter<AirPollutionBase> _owmToElasticDocumentConverter;
         private readonly IProcessingBaseImplementations _processingBaseImplementations;
+        private readonly ILogger _logger;
         
         public ProcessingBaseAirPollutionImpl(IElasticConnection elasticConnection,
             ILocationFileReader locationFileReader, IFileStorage fileStorage,
-            IOwmApiReader owmApiReader, IOwmToElasticDocumentConverter<AirPollutionBase> owmToElasticDocumentConverter, IProcessingBaseImplementations processingBaseImplementations)
+            IOwmApiReader owmApiReader, IOwmToElasticDocumentConverter<AirPollutionBase> owmToElasticDocumentConverter, IProcessingBaseImplementations processingBaseImplementations, ILogger loggingBase)
         {
             _elasticConnection = elasticConnection;
             _locationFileReader = locationFileReader;
@@ -33,12 +35,15 @@ namespace RegionalWeather.Processing
             _fileStorage = fileStorage;
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
             _processingBaseImplementations = processingBaseImplementations;
+            _logger = loggingBase.ForContext<ProcessingBaseAirPollutionImpl>();
+            _logger.Information("Begin with etl process of weather information for locations.");
         }
 
         public async Task Process(ConfigurationItems configuration)
         {
             var locationsList =
                 (await _locationFileReader.ReadLocationsAsync(configuration.AirPollutionLocationsFile)).ValueOr(new List<string>());
+            _logger.Information($"read the list of locations with {locationsList.Count} entries");
             var splitLocationList = locationsList.Select(element =>
             {
                 var splt = element.Split(";");
@@ -48,6 +53,7 @@ namespace RegionalWeather.Processing
             var rootTasks = _processingBaseImplementations.ConvertToParallelQuery(splitLocationList, configuration.Parallelism)
                 .Select(async location =>
                 {
+                    _logger.Information($"get weather information for configured {location}");
                     var uri =
                         $"https://api.openweathermap.org/data/2.5/air_pollution?{location.Item1}&appid={configuration.OwmApiKey}";
                     var resultOpt = await _owmApiReader.ReadDataFromLocationAsync(uri);
@@ -57,6 +63,7 @@ namespace RegionalWeather.Processing
             var rootOptions = (await Task.WhenAll(rootTasks)).Values();
 
             var readTime = DateTime.Now;
+            _logger.Information($"define document timestamp for elastic is {readTime}");
             var rootStrings = _processingBaseImplementations.ConvertToParallelQuery(rootOptions, configuration.Parallelism)
                 .Select(async rootElement =>
                 {
@@ -86,6 +93,7 @@ namespace RegionalWeather.Processing
 
 
             var indexName = _elasticConnection.BuildIndexName(configuration.AirPollutionIndexName, readTime);
+            _logger.Information($"write weather data to index {indexName}");
             if (!await _elasticConnection.IndexExistsAsync(indexName))
             {
                 await _elasticConnection.CreateIndexAsync<AirPollutionDocument>(indexName);

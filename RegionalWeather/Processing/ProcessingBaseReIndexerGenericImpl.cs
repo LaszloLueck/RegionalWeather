@@ -47,6 +47,8 @@ namespace RegionalWeather.Processing
                     var files = _directoryUtils.GetFilesOfDirectory(configuration.ReindexLookupPath,
                         filePattern);
 
+                    _logger.Information($"found files for pattern {filePattern}");
+                    
                     //Create the indexes from files
                     var distinct = files
                         .Select(file =>
@@ -106,10 +108,7 @@ namespace RegionalWeather.Processing
         {
             var subSeq = fileName.IndexOf(prefix);
             var fn = fileName.Substring(subSeq);
-
-
             var newName = fn.Replace(prefix, "").Replace(suffix, "");
-
             return DateTime.ParseExact(newName, "yyyyMMdd", CultureInfo.InvariantCulture);
         }
 

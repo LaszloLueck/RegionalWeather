@@ -45,6 +45,7 @@ namespace RegionalWeather.Processing
             _logger.Information("try to read weatherinformations");
             var locationList =
                 (await _locationFileReader.ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(new List<string>());
+            _logger.Information($"read the list of locations with {locationList.Count} entries");
             var rootTasksOption = _processingBaseImplementations.ConvertToParallelQuery(locationList, configuration.Parallelism)
                 .Select(async location =>
                 {

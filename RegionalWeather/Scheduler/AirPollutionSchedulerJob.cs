@@ -40,7 +40,7 @@ namespace RegionalWeather.Scheduler
                     new ProcessingBaseImplementations(loggingBase);
                 
                 var processor = new ProcessingBaseAirPollutionImpl(elasticConnection, locationReader, fileStorage,
-                    owmApiReader, owmConverter, processingBaseImplementations);
+                    owmApiReader, owmConverter, processingBaseImplementations, loggingBase);
 
 
                 await processor.Process(configuration);
