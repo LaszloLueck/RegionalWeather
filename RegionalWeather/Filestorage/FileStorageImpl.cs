@@ -66,7 +66,7 @@ namespace RegionalWeather.Filestorage
                     str.Position = 0;
                     await streamWriter.WriteLineAsync(await new StreamReader(str).ReadToEndAsync());
                 });
-                _logger.Information($"Successfully write {enumerable.Count} lines to file");
+                _logger.Information($"Successfully written {enumerable.Count} lines to file");
                 await streamWriter.FlushAsync();
                 await streamWriter.DisposeAsync();
             });

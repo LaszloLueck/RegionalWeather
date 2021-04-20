@@ -36,7 +36,7 @@ namespace RegionalWeather.Processing
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
             _processingBaseImplementations = processingBaseImplementations;
             _logger = loggingBase.ForContext<ProcessingBaseAirPollutionImpl>();
-            _logger.Information("Begin with etl process of weather information for locations.");
+            _logger.Information("Begin with etl process of airpollution information for locations.");
         }
 
         public async Task Process(ConfigurationItems configuration)
@@ -55,7 +55,7 @@ namespace RegionalWeather.Processing
                 .ConvertToParallelQuery(splitLocationList, configuration.Parallelism)
                 .Select(async location =>
                 {
-                    _logger.Information($"get weather information for configured {location}");
+                    _logger.Information($"get airpollution information for configured {location}");
                     var uri =
                         $"https://api.openweathermap.org/data/2.5/air_pollution?{location.Item1}&appid={configuration.OwmApiKey}";
                     var resultOpt = await _owmApiReader.ReadDataFromLocationAsync(uri);
@@ -96,7 +96,7 @@ namespace RegionalWeather.Processing
 
 
             var indexName = _elasticConnection.BuildIndexName(configuration.AirPollutionIndexName, readTime);
-            _logger.Information($"write weather data to index {indexName}");
+            _logger.Information($"write airpollution data to index {indexName}");
             if (!await _elasticConnection.IndexExistsAsync(indexName))
             {
                 await _elasticConnection.CreateIndexAsync<AirPollutionDocument>(indexName);
