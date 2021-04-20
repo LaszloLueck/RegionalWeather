@@ -51,7 +51,7 @@ namespace RegionalWeather.Processing
                     cpFiles = cpFiles.ToList();
 
                     _logger.Information($"found {cpFiles.Count()} files to reindex for pattern {filePattern}");
-                    if (!cpFiles.Any())
+                    if (cpFiles.Any())
                     {
                         //Create the indexes from files
                         var distinct = files
