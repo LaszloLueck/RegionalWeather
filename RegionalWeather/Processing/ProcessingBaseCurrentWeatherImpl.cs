@@ -7,7 +7,6 @@ using Optional.Collections;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
 using RegionalWeather.FileRead;
-using RegionalWeather.Filestorage;
 using RegionalWeather.Owm.CurrentWeather;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
@@ -20,20 +19,20 @@ namespace RegionalWeather.Processing
         private readonly IElasticConnection _elasticConnection;
         private readonly ILocationFileReader _locationFileReader;
         private readonly IOwmApiReader _owmApiReader;
-        private readonly IFileStorage _fileStorage;
+        private readonly IProcessingUtils _processingUtils;
         private readonly IOwmToElasticDocumentConverter<CurrentWeatherBase> _owmToElasticDocumentConverter;
         private readonly IProcessingBaseImplementations _processingBaseImplementations;
         private readonly ILogger _logger;
 
         public ProcessingBaseCurrentWeatherImpl(IElasticConnection elasticConnection,
-            ILocationFileReader locationFileReader, IOwmApiReader owmApiReader, IFileStorage fileStorage,
+            ILocationFileReader locationFileReader, IOwmApiReader owmApiReader, IProcessingUtils processingUtils,
             IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter,
             IProcessingBaseImplementations processingBaseImplementations, ILogger loggingBase)
         {
             _elasticConnection = elasticConnection;
             _locationFileReader = locationFileReader;
             _owmApiReader = owmApiReader;
-            _fileStorage = fileStorage;
+            _processingUtils = processingUtils;
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
             _processingBaseImplementations = processingBaseImplementations;
             _logger = loggingBase.ForContext<ProcessingBaseCurrentWeatherImpl>();
@@ -44,9 +43,11 @@ namespace RegionalWeather.Processing
         {
             _logger.Information("try to read weatherinformations");
             var locationList =
-                (await _locationFileReader.ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(new List<string>());
+                (await _locationFileReader.ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(
+                    new List<string>());
             _logger.Information($"read the list of locations with {locationList.Count} entries");
-            var rootTasksOption = _processingBaseImplementations.ConvertToParallelQuery(locationList, configuration.Parallelism)
+            var rootTasksOption = _processingBaseImplementations
+                .ConvertToParallelQuery(locationList, configuration.Parallelism)
                 .Select(async location =>
                 {
                     _logger.Information($"get weather information for configured {location}");
@@ -57,8 +58,10 @@ namespace RegionalWeather.Processing
 
             var rootOptions = (await Task.WhenAll(rootTasksOption)).Values();
 
-            var rootStrings = _processingBaseImplementations.ConvertToParallelQuery(rootOptions, configuration.Parallelism)
-                .Select(async rootString => await _processingBaseImplementations.DeserializeObjectAsync<CurrentWeatherBase>(rootString));
+            var rootStrings = _processingBaseImplementations
+                .ConvertToParallelQuery(rootOptions, configuration.Parallelism)
+                .Select(async rootString =>
+                    await _processingBaseImplementations.DeserializeObjectAsync<CurrentWeatherBase>(rootString));
 
 
             var readTime = DateTime.Now;
@@ -72,13 +75,11 @@ namespace RegionalWeather.Processing
                 });
 
             var concurrentBag = new ConcurrentBag<CurrentWeatherBase>(toElastic);
-            
-            var storeFileName =
-                configuration.FileStorageTemplate.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
 
-            await _fileStorage.WriteAllDataAsync(concurrentBag, storeFileName);
+            await _processingUtils.WriteFilesToDirectory(configuration.FileStorageTemplate, concurrentBag);
 
-            var elasticDocsTasks = _processingBaseImplementations.ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
+            var elasticDocsTasks = _processingBaseImplementations
+                .ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
                 .Select(async rootDoc => await _owmToElasticDocumentConverter.ConvertAsync(rootDoc));
 
             var elasticDocs = (await Task.WhenAll(elasticDocsTasks))
@@ -86,7 +87,7 @@ namespace RegionalWeather.Processing
 
             var indexName = _elasticConnection.BuildIndexName(configuration.ElasticIndexName, readTime);
             _logger.Information($"write weather data to index {indexName}");
-            
+
             if (!await _elasticConnection.IndexExistsAsync(indexName))
             {
                 await _elasticConnection.CreateIndexAsync<WeatherLocationDocument>(indexName);

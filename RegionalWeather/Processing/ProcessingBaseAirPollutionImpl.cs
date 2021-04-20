@@ -7,7 +7,6 @@ using Optional.Collections;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
 using RegionalWeather.FileRead;
-using RegionalWeather.Filestorage;
 using RegionalWeather.Owm.AirPollution;
 using RegionalWeather.Transport.Elastic;
 using RegionalWeather.Transport.Owm;
@@ -20,19 +19,20 @@ namespace RegionalWeather.Processing
         private readonly IElasticConnection _elasticConnection;
         private readonly ILocationFileReader _locationFileReader;
         private readonly IOwmApiReader _owmApiReader;
-        private readonly IFileStorage _fileStorage;
+        private readonly IProcessingUtils _processingUtils;
         private readonly IOwmToElasticDocumentConverter<AirPollutionBase> _owmToElasticDocumentConverter;
         private readonly IProcessingBaseImplementations _processingBaseImplementations;
         private readonly ILogger _logger;
-        
+
         public ProcessingBaseAirPollutionImpl(IElasticConnection elasticConnection,
-            ILocationFileReader locationFileReader, IFileStorage fileStorage,
-            IOwmApiReader owmApiReader, IOwmToElasticDocumentConverter<AirPollutionBase> owmToElasticDocumentConverter, IProcessingBaseImplementations processingBaseImplementations, ILogger loggingBase)
+            ILocationFileReader locationFileReader, IProcessingUtils processingUtils,
+            IOwmApiReader owmApiReader, IOwmToElasticDocumentConverter<AirPollutionBase> owmToElasticDocumentConverter,
+            IProcessingBaseImplementations processingBaseImplementations, ILogger loggingBase)
         {
             _elasticConnection = elasticConnection;
             _locationFileReader = locationFileReader;
             _owmApiReader = owmApiReader;
-            _fileStorage = fileStorage;
+            _processingUtils = processingUtils;
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
             _processingBaseImplementations = processingBaseImplementations;
             _logger = loggingBase.ForContext<ProcessingBaseAirPollutionImpl>();
@@ -42,7 +42,8 @@ namespace RegionalWeather.Processing
         public async Task Process(ConfigurationItems configuration)
         {
             var locationsList =
-                (await _locationFileReader.ReadLocationsAsync(configuration.AirPollutionLocationsFile)).ValueOr(new List<string>());
+                (await _locationFileReader.ReadLocationsAsync(configuration.AirPollutionLocationsFile)).ValueOr(
+                    new List<string>());
             _logger.Information($"read the list of locations with {locationsList.Count} entries");
             var splitLocationList = locationsList.Select(element =>
             {
@@ -50,7 +51,8 @@ namespace RegionalWeather.Processing
                 return (splt[0], splt[1]);
             });
 
-            var rootTasks = _processingBaseImplementations.ConvertToParallelQuery(splitLocationList, configuration.Parallelism)
+            var rootTasks = _processingBaseImplementations
+                .ConvertToParallelQuery(splitLocationList, configuration.Parallelism)
                 .Select(async location =>
                 {
                     _logger.Information($"get weather information for configured {location}");
@@ -64,10 +66,13 @@ namespace RegionalWeather.Processing
 
             var readTime = DateTime.Now;
             _logger.Information($"define document timestamp for elastic is {readTime}");
-            var rootStrings = _processingBaseImplementations.ConvertToParallelQuery(rootOptions, configuration.Parallelism)
+            var rootStrings = _processingBaseImplementations
+                .ConvertToParallelQuery(rootOptions, configuration.Parallelism)
                 .Select(async rootElement =>
                 {
-                    var elementOpt = await _processingBaseImplementations.DeserializeObjectAsync<AirPollutionBase>(rootElement.Item2);
+                    var elementOpt =
+                        await _processingBaseImplementations
+                            .DeserializeObjectAsync<AirPollutionBase>(rootElement.Item2);
 
                     return elementOpt.Map(element =>
                     {
@@ -80,13 +85,11 @@ namespace RegionalWeather.Processing
             var toElastic = (await Task.WhenAll(rootStrings)).Values();
 
             var concurrentBag = new ConcurrentBag<AirPollutionBase>(toElastic);
-            var storeFileName =
-                configuration.AirPollutionFileStoragePath.Replace("[CURRENTDATE]",
-                    DateTime.Now.ToString("yyyyMMdd"));
 
-            await _fileStorage.WriteAllDataAsync(concurrentBag, storeFileName);
+            await _processingUtils.WriteFilesToDirectory(configuration.AirPollutionFileStoragePath, concurrentBag);
 
-            var elasticDocTasks = _processingBaseImplementations.ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
+            var elasticDocTasks = _processingBaseImplementations
+                .ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
                 .Select(async apDoc => await _owmToElasticDocumentConverter.ConvertAsync(apDoc));
 
             var elasticDocs = (await Task.WhenAll(elasticDocTasks)).Values();

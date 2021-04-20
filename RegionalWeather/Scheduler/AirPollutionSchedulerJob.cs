@@ -4,7 +4,6 @@ using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
 using RegionalWeather.FileRead;
 using RegionalWeather.Filestorage;
-using RegionalWeather.Logging;
 using RegionalWeather.Owm.AirPollution;
 using RegionalWeather.Processing;
 using RegionalWeather.Transport.Elastic;
@@ -33,18 +32,18 @@ namespace RegionalWeather.Scheduler
                 IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration, loggingBase);
                 ILocationFileReader locationReader = new LocationFileReaderImpl(loggingBase);
                 IFileStorage fileStorage = new FileStorageImpl(loggingBase);
+                IProcessingUtils processingUtils = new ProcessingUtils(fileStorage, loggingBase);
                 IOwmApiReader owmApiReader = new OwmApiReader(loggingBase);
                 IOwmToElasticDocumentConverter<AirPollutionBase> owmConverter =
                     new AirPollutionToElasticDocumentConverter(loggingBase);
                 IProcessingBaseImplementations processingBaseImplementations =
                     new ProcessingBaseImplementations(loggingBase);
-                
-                var processor = new ProcessingBaseAirPollutionImpl(elasticConnection, locationReader, fileStorage,
+
+                var processor = new ProcessingBaseAirPollutionImpl(elasticConnection, locationReader, processingUtils,
                     owmApiReader, owmConverter, processingBaseImplementations, loggingBase);
 
 
                 await processor.Process(configuration);
-                
             });
         }
     }

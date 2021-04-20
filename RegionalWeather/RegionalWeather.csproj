@@ -29,9 +29,17 @@
 
     <ItemGroup>
       <None Remove="Locations.json" />
+      <Content Include="AirPollutionLocations.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <Content Include="bin\Debug\net5.0\AirPollutionLocations.txt" />
       <Content Include="Locations.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="bin\Debug\net5.0\backup" />
     </ItemGroup>
 
 </Project>

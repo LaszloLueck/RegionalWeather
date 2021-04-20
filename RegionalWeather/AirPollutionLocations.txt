@@ -1,0 +1,4 @@
+lat=50.77&lon=6.83;Weilerswist
+lat=50.82&lon=6.77;Erftstadt
+lat=50.78&lon=6.08;Aachen
+lat=50.73&lon=6.6;VettweiÃŸ

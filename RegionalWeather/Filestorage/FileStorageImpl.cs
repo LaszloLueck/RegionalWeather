@@ -12,6 +12,14 @@ namespace RegionalWeather.Filestorage
     public interface IFileStorage
     {
         public Task WriteAllDataAsync<T>(IEnumerable<T> roots, string fileName);
+
+        public string GetAbsoluteFilePath(string relativePath);
+
+        public string GetAbsoluteDirectoryPath(string path);
+
+        public bool DirectoryExists(string path);
+
+        public bool CreateDirectory(string path);
     }
 
     public class FileStorageImpl : IFileStorage
@@ -21,6 +29,27 @@ namespace RegionalWeather.Filestorage
         public FileStorageImpl(ILogger loggingBase)
         {
             _logger = loggingBase.ForContext<FileStorageImpl>();
+        }
+
+        public string GetAbsoluteFilePath(string relativePath)
+        {
+            return Path.GetFullPath(relativePath);
+        }
+
+        public bool CreateDirectory(string path)
+        {
+            var info = Directory.CreateDirectory(path);
+            return info.Exists;
+        }
+
+        public string GetAbsoluteDirectoryPath(string path)
+        {
+            return Path.GetDirectoryName(path);
+        }
+
+        public bool DirectoryExists(string path)
+        {
+            return Directory.Exists(path);
         }
 
         public async Task WriteAllDataAsync<T>(IEnumerable<T> roots, string fileName)

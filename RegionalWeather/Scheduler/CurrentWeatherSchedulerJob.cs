@@ -31,6 +31,7 @@ namespace RegionalWeather.Scheduler
                 logger.Information($"ElasticSearch: {configuration.ElasticHostsAndPorts}");
                 
                 IFileStorage storage = new FileStorageImpl(loggingBase);
+                IProcessingUtils processingUtils = new ProcessingUtils(storage, loggingBase);
                 IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration, loggingBase);
                 ILocationFileReader locationReader = new LocationFileReaderImpl(loggingBase);
                 IOwmApiReader owmReader = new OwmApiReader(loggingBase);
@@ -39,7 +40,7 @@ namespace RegionalWeather.Scheduler
                     new ProcessingBaseImplementations(loggingBase);
                 
                 var processor =
-                    new ProcessingBaseCurrentWeatherImpl(elasticConnection, locationReader, owmReader, storage,
+                    new ProcessingBaseCurrentWeatherImpl(elasticConnection, locationReader, owmReader, processingUtils,
                         owmConverter, processingBaseImplementations, loggingBase);
 
 
