@@ -28,7 +28,7 @@ namespace RegionalWeather.Elastic
             {
                 var result = await Task.Run(() =>
                 {
-                    var ret = new AirPollutionDocument {Id = Guid.NewGuid(), TimeStamp = owmDoc.ReadTime};
+                    var ret = new AirPollutionDocument {Id = owmDoc.Guid, TimeStamp = owmDoc.ReadTime};
                     var lstElement = owmDoc.List[0];
                     ret.DateTime = DateTimeOffset.FromUnixTimeSeconds(lstElement.Dt).LocalDateTime;
                     ret.AirQualityIndex = lstElement.Main.Aqi;
@@ -81,7 +81,7 @@ namespace RegionalWeather.Elastic
 
         private static WeatherLocationDocument Convert(CurrentWeatherBase owmDoc)
         {
-            var etl = new WeatherLocationDocument {Id = Guid.NewGuid()};
+            var etl = new WeatherLocationDocument {Id = owmDoc.Guid};
 
 
             var clds = new Clouds

@@ -71,6 +71,7 @@ namespace RegionalWeather.Processing
                 .Select(item =>
                 {
                     item.ReadTime = readTime;
+                    item.Guid = Guid.NewGuid();
                     return item;
                 });
 

@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace RegionalWeather.Owm.CurrentWeather
 {
-    public class CurrentWeatherBase    {
+    public class CurrentWeatherBase : OwmBase   {
         [JsonPropertyName("coord")]
         public Coord Coord { get; set; } 
 
