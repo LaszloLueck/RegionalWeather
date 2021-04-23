@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
 using Nest;
@@ -59,7 +61,7 @@ namespace RegionalWeather.Transport.Elastic
         {
             //we receive the indexname in format [-XXYYYY], so we can rebuild the sharding as expected from configuration
             //e.g. mysuperindex[-MMyyyy] would be calculated to mysuperindex-122020 for december of 2020...
-
+            var sw = Stopwatch.StartNew();
             try
             {
                 var indexPart = indexName.Substring(0, indexName.IndexOf('['));
@@ -73,20 +75,44 @@ namespace RegionalWeather.Transport.Elastic
                 _logger.Error(ex, $"Error while converting indexname <{indexName}> with sharding pattern");
                 return indexName;
             }
+            finally
+            {
+                sw.Stop();
+                _logger.Information($"{MethodBase.GetCurrentMethod().Name} :: {sw.ElapsedMilliseconds} ms");
+            }
         }
 
         public async Task BulkWriteDocumentsAsync<T>(IEnumerable<T> documents, string indexName)
             where T : ElasticDocument
         {
-            var result = await _elasticClient.IndexManyAsync(documents, indexName);
-            ProcessResponse(result);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                var result = await _elasticClient.IndexManyAsync(documents, indexName);
+                ProcessResponse(result);
+            }
+            finally
+            { 
+                sw.Stop();
+                _logger.Information($"BulkWriteDocumentAsync<{typeof(T)}> :: {sw.ElapsedMilliseconds} ms");
+            }
+
         }
 
         public async Task<bool> IndexExistsAsync(string indexName)
         {
-            _logger.Information("Check if index exists");
-            var ret = await _elasticClient.Indices.ExistsAsync(indexName);
-            return ret.Exists;
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                _logger.Information("Check if index exists");
+                var ret = await _elasticClient.Indices.ExistsAsync(indexName);
+                return ret.Exists;
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information($"IndexExistsAsync :: {sw.ElapsedMilliseconds} ms");
+            }
         }
 
         public async Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument

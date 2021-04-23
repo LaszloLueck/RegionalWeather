@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using Optional;
 using RegionalWeather.Configuration;
 using Serilog;
@@ -16,6 +18,7 @@ namespace RegionalWeather.Logging
      
         public static Option<Logger> BuildLogger(ConfigurationItems configurationItems)
         {
+            var sw = Stopwatch.StartNew();
             try
             {
                 Log.Info("build the Serilog logger factory");
@@ -45,6 +48,11 @@ namespace RegionalWeather.Logging
             {
                 Log.Error(ex, "An error occured while building the Serilog logger factory");
                 return Option.None<Logger>();
+            }
+            finally
+            {
+                sw.Stop();
+                Log.Info($"{MethodBase.GetCurrentMethod().Name} :: {sw.ElapsedMilliseconds} ms");
             }
         }
     }

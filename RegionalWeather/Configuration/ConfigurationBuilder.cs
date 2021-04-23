@@ -1,4 +1,7 @@
 ﻿#pragma warning disable
+using System;
+using System.Diagnostics;
+using System.Reflection;
 using System.Threading.Tasks;
 using Optional;
 using Optional.Linq;
@@ -45,7 +48,16 @@ namespace RegionalWeather.Configuration
 
         public async Task<Option<ConfigurationItems>> GetConfigurationAsync()
         {
-            return await Task.Run(GetConfiguration);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                return await Task.Run(GetConfiguration);
+            }
+            finally
+            {
+                sw.Stop();
+                Console.WriteLine($"GetConfigurationAsync :: {sw.ElapsedMilliseconds} ms");
+            }
         }
 
 

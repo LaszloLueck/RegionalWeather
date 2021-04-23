@@ -18,10 +18,7 @@ namespace RegionalWeather.Configuration
                 {
                     if (returnEmptyStringIfNoValue)
                         return Option.Some(string.Empty);
-                    Task.Run(async () =>
-                    {
-                        await Log.InfoAsync($"No entry found for environment variable {value}");
-                    });
+                    Task.Run(async () => { await Log.InfoAsync($"No entry found for environment variable {value}"); });
                     return Option.None<string>();
                 }
             );
