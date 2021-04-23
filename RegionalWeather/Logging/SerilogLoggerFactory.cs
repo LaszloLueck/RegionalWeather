@@ -5,7 +5,6 @@ using RegionalWeather.Configuration;
 using Serilog;
 using Serilog.Core;
 using Serilog.Sinks.Elasticsearch;
-using Tracer.Serilog;
 
 namespace RegionalWeather.Logging
 {

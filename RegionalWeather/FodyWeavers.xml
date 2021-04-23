@@ -1,6 +1,3 @@
 ﻿<Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
   <MethodTimer />
-  <Tracer adapterAssembly="Tracer.Serilog" traceConstructors="true" traceProperties="true" logManager="Tracer.Serilog.Adapters.LogManagerAdapter" logger="Tracer.Serilog.Adapters.LoggerAdapter" staticLogger="Tracer.Serilog.Log">
-    <TraceOn namespace="RegionalWeather+*" class="public" method="public" />
-  </Tracer>
 </Weavers>

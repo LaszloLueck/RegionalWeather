@@ -1,18 +1,14 @@
 ﻿using System;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using MethodTimer;
-using Optional;
 using Optional.Linq;
 using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
 using RegionalWeather.Scheduler;
 using Serilog;
-using TracerAttributes;
 
 namespace RegionalWeather
 {
-    [TraceOn]
     class Program
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<Program>.GetLogger();
@@ -20,7 +16,7 @@ namespace RegionalWeather
         protected Program()
         {
         }
-
+        
         [Time]
         static async Task Main(string[] args)
         {
