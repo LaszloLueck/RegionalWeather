@@ -117,84 +117,133 @@ namespace RegionalWeather.Transport.Elastic
 
         public async Task<bool> CreateIndexAsync<T>(string indexName) where T : ElasticDocument
         {
-            _logger.Information($"Create index {indexName} with Mapping");
-            var result = await _elasticClient
-                .Indices
-                .CreateAsync(indexName, index => index
-                    .Map<T>(x => x.AutoMap()
-                        .Properties(d => d.Date(e => e.Name(en => en.TimeStamp)))));
-            return ProcessResponse(result);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                _logger.Information($"Create index {indexName} with Mapping");
+                var result = await _elasticClient
+                    .Indices
+                    .CreateAsync(indexName, index => index
+                        .Map<T>(x => x.AutoMap()
+                            .Properties(d => d.Date(e => e.Name(en => en.TimeStamp)))));
+                return ProcessResponse(result);
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information($"CreateIndexAsync :: {sw.ElapsedMilliseconds} ms");
+            }
         }
 
         public async Task<bool> RefreshIndexAsync(string indexName)
         {
-            _logger.Information($"Refresh index {indexName}");
-            var result = await _elasticClient
-                .Indices
-                .RefreshAsync(indexName);
-            return ProcessResponse(result);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                _logger.Information($"Refresh index {indexName}");
+                var result = await _elasticClient
+                    .Indices
+                    .RefreshAsync(indexName);
+                return ProcessResponse(result);
+
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information($"RefreshIndexAsync :: {sw.ElapsedMilliseconds} ms");
+            }
         }
 
         public async Task<bool> FlushIndexAsync(string indexName)
         {
-            _logger.Information($"Flush index {indexName}");
-            var result = await _elasticClient
-                .Indices
-                .FlushAsync(indexName);
-            return ProcessResponse(result);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                _logger.Information($"Flush index {indexName}");
+                var result = await _elasticClient
+                    .Indices
+                    .FlushAsync(indexName);
+                return ProcessResponse(result);
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information($"FlushIndexAsync :: {sw.ElapsedMilliseconds} ms");
+            }
         }
 
         public async Task<bool> DeleteIndexAsync(string indexName)
         {
-            _logger.Information($"Delete index {indexName}");
-            var result = await _elasticClient
-                .Indices
-                .DeleteAsync(indexName);
-            return ProcessResponse(result);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                _logger.Information($"Delete index {indexName}");
+                var result = await _elasticClient
+                    .Indices
+                    .DeleteAsync(indexName);
+                return ProcessResponse(result);
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information($"DeleteIndexAsync :: {sw.ElapsedMilliseconds} ms");
+            }
         }
 
         private bool ProcessResponse<T>(T response)
         {
-            switch (response)
+            var sw = Stopwatch.StartNew();
+            try
             {
-                case DeleteIndexResponse deleteIndexResponse:
-                    if (deleteIndexResponse.Acknowledged) return deleteIndexResponse.Acknowledged;
-                    _logger.Warning(deleteIndexResponse.DebugInformation);
-                    _logger.Error(deleteIndexResponse.OriginalException, deleteIndexResponse.ServerError.Error.Reason);
-                    return deleteIndexResponse.Acknowledged;
-                case IndexResponse indexResponse:
-                    if (indexResponse.IsValid) return indexResponse.IsValid;
-                    _logger.Warning(indexResponse.DebugInformation);
-                    _logger.Error(indexResponse.OriginalException, indexResponse.ServerError.Error.Reason);
-                    return indexResponse.IsValid;
-                case CreateIndexResponse createIndexResponse:
-                    if (createIndexResponse.IsValid) return createIndexResponse.IsValid;
-                    _logger.Warning(createIndexResponse.DebugInformation);
-                    _logger.Error(createIndexResponse.OriginalException, createIndexResponse.ServerError.Error.Reason);
-                    return createIndexResponse.IsValid;
-                case FlushResponse flushResponse:
-                    if (flushResponse.IsValid) return flushResponse.IsValid;
-                    _logger.Warning(flushResponse.DebugInformation);
-                    _logger.Error(flushResponse.OriginalException, flushResponse.ServerError.Error.Reason);
-                    return flushResponse.IsValid;
-                case RefreshResponse refreshResponse:
-                    if (refreshResponse.IsValid) return refreshResponse.IsValid;
-                    _logger.Warning(refreshResponse.DebugInformation);
-                    _logger.Error(refreshResponse.OriginalException, refreshResponse.ServerError.Error.Reason);
-                    return refreshResponse.IsValid;
-                case BulkResponse bulkResponse:
-                    if (bulkResponse.IsValid)
-                    {
-                        _logger.Information($"Successfully written {bulkResponse.Items.Count} documents to elastic");
-                        return bulkResponse.IsValid;
-                    }
+                switch (response)
+                {
+                    case DeleteIndexResponse deleteIndexResponse:
+                        if (deleteIndexResponse.Acknowledged) return deleteIndexResponse.Acknowledged;
+                        _logger.Warning(deleteIndexResponse.DebugInformation);
+                        _logger.Error(deleteIndexResponse.OriginalException,
+                            deleteIndexResponse.ServerError.Error.Reason);
+                        return deleteIndexResponse.Acknowledged;
+                    case IndexResponse indexResponse:
+                        if (indexResponse.IsValid) return indexResponse.IsValid;
+                        _logger.Warning(indexResponse.DebugInformation);
+                        _logger.Error(indexResponse.OriginalException, indexResponse.ServerError.Error.Reason);
+                        return indexResponse.IsValid;
+                    case CreateIndexResponse createIndexResponse:
+                        if (createIndexResponse.IsValid) return createIndexResponse.IsValid;
+                        _logger.Warning(createIndexResponse.DebugInformation);
+                        _logger.Error(createIndexResponse.OriginalException,
+                            createIndexResponse.ServerError.Error.Reason);
+                        return createIndexResponse.IsValid;
+                    case FlushResponse flushResponse:
+                        if (flushResponse.IsValid) return flushResponse.IsValid;
+                        _logger.Warning(flushResponse.DebugInformation);
+                        _logger.Error(flushResponse.OriginalException, flushResponse.ServerError.Error.Reason);
+                        return flushResponse.IsValid;
+                    case RefreshResponse refreshResponse:
+                        if (refreshResponse.IsValid) return refreshResponse.IsValid;
+                        _logger.Warning(refreshResponse.DebugInformation);
+                        _logger.Error(refreshResponse.OriginalException, refreshResponse.ServerError.Error.Reason);
+                        return refreshResponse.IsValid;
+                    case BulkResponse bulkResponse:
+                        if (bulkResponse.IsValid)
+                        {
+                            _logger.Information(
+                                $"Successfully written {bulkResponse.Items.Count} documents to elastic");
+                            return bulkResponse.IsValid;
+                        }
 
-                    _logger.Warning(bulkResponse.DebugInformation);
-                    _logger.Error(bulkResponse.OriginalException, bulkResponse.ServerError.Error.Reason);
-                    return bulkResponse.IsValid;
-                default:
-                    _logger.Warning($"Cannot find Conversion for type <{response.GetType().Name}>");
-                    return false;
+                        _logger.Warning(bulkResponse.DebugInformation);
+                        _logger.Error(bulkResponse.OriginalException, bulkResponse.ServerError.Error.Reason);
+                        return bulkResponse.IsValid;
+                    default:
+                        _logger.Warning($"Cannot find Conversion for type <{response.GetType().Name}>");
+                        return false;
+                }
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information($"ProcessResponse<{typeof(T)}> :: {sw.ElapsedMilliseconds} ms");
             }
         }
     }
