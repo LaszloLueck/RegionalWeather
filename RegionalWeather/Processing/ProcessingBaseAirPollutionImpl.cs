@@ -78,6 +78,7 @@ namespace RegionalWeather.Processing
                     {
                         element.LocationName = rootElement.Item1;
                         element.ReadTime = readTime;
+                        element.Guid = Guid.NewGuid();
                         return element;
                     });
                 });

@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace RegionalWeather.Owm.AirPollution
 {
-    public class AirPollutionBase
+    public class AirPollutionBase : OwmBase
     {
         [JsonPropertyName("coord")] public Coord Coord { get; set; }
 
