@@ -5,6 +5,7 @@ using RegionalWeather.Configuration;
 using Serilog;
 using Serilog.Core;
 using Serilog.Sinks.Elasticsearch;
+using Tracer.Serilog;
 
 namespace RegionalWeather.Logging
 {
@@ -21,8 +22,11 @@ namespace RegionalWeather.Logging
                 Log.Info("build the Serilog logger factory");
                 var elasticUriList = configurationItems.ElasticHostsAndPorts.Split(",").Select(uri => new Uri(uri));
 
-                var l = configurationItems.LogToElasticSearch
-                    ? new LoggerConfiguration().WriteTo.Elasticsearch(new ElasticsearchSinkOptions(elasticUriList)
+                
+                 var l = configurationItems.LogToElasticSearch
+                    ? new LoggerConfiguration()
+                        .WriteTo
+                        .Elasticsearch(new ElasticsearchSinkOptions(elasticUriList)
                     {
                         AutoRegisterTemplate = true, AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv7,
                         IndexFormat = $"{configurationItems.ElasticSearchLogIndexName}-{DateTime.UtcNow:yyyy-MM}"

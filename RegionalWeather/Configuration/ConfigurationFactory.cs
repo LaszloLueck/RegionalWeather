@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using MethodTimer;
 using Optional;
 using RegionalWeather.Logging;
 
@@ -9,6 +10,7 @@ namespace RegionalWeather.Configuration
     {
         private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ConfigurationFactory>.GetLogger();
 
+        [Time]
         public Option<string> ReadEnvironmentVariableString(EnvEntries value, bool returnEmptyStringIfNoValue = false)
         {
             //Put some sugar here to tell why the container stops.
