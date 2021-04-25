@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -54,22 +55,32 @@ namespace RegionalWeather.Filestorage
 
         public async Task WriteAllDataAsync<T>(IEnumerable<T> roots, string fileName)
         {
-            await Task.Run(async () =>
+            var sw = Stopwatch.StartNew();
+            try
             {
-                _logger.Information($"write entries of type {typeof(T)} to file {fileName}");
-                await using StreamWriter streamWriter = new StreamWriter(fileName, true, Encoding.UTF8, 32768);
-                var enumerable = roots.ToList();
-                enumerable.ToList().ForEach(async root =>
+                await Task.Run(async () =>
                 {
-                    await using MemoryStream str = new MemoryStream();
-                    await JsonSerializer.SerializeAsync(str, root, root.GetType());
-                    str.Position = 0;
-                    await streamWriter.WriteLineAsync(await new StreamReader(str).ReadToEndAsync());
+                    _logger.Information($"write entries of type {typeof(T)} to file {fileName}");
+                    await using StreamWriter streamWriter = new StreamWriter(fileName, true, Encoding.UTF8, 32768);
+                    var enumerable = roots.ToList();
+                    enumerable.ToList().ForEach(async root =>
+                    {
+                        await using MemoryStream str = new MemoryStream();
+                        await JsonSerializer.SerializeAsync(str, root, root.GetType());
+                        str.Position = 0;
+                        await streamWriter.WriteLineAsync(await new StreamReader(str).ReadToEndAsync());
+                    });
+                    _logger.Information($"Successfully written {enumerable.Count} lines to file");
+                    await streamWriter.FlushAsync();
+                    await streamWriter.DisposeAsync();
                 });
-                _logger.Information($"Successfully written {enumerable.Count} lines to file");
-                await streamWriter.FlushAsync();
-                await streamWriter.DisposeAsync();
-            });
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", $"WriteAllDataAsync<{typeof(T)}>",
+                    sw.ElapsedMilliseconds);
+            }
         }
     }
 }

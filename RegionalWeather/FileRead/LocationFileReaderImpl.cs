@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Optional;
@@ -23,9 +24,10 @@ namespace RegionalWeather.FileRead
 
         public async Task<Option<List<string>>> ReadLocationsAsync(string locationPath)
         {
-            _logger.Information("Try to read the list of locations");
+            var sw = Stopwatch.StartNew();
             try
             {
+                _logger.Information("Try to read the list of locations");
                 return await Task.Run(async () =>
                 {
                     using var sr = new StreamReader(locationPath);
@@ -43,6 +45,12 @@ namespace RegionalWeather.FileRead
             {
                 _logger.Error(exception, "An error occured");
                 return await Task.Run(Option.None<List<string>>);
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "ReadLocationsAsync",
+                    sw.ElapsedMilliseconds);
             }
         }
     }

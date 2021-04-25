@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Quartz;
 using Quartz.Impl;
@@ -45,10 +46,20 @@ namespace RegionalWeather.Scheduler
 
         public async Task RunScheduler()
         {
-            _logger.Information("Initialize the scheduler.");
-            await BuildScheduler();
-            await StartScheduler();
-            await ScheduleJob();
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                _logger.Information("Initialize the scheduler.");
+                await BuildScheduler();
+                await StartScheduler();
+                await ScheduleJob();
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "RunScheduler",
+                    sw.ElapsedMilliseconds);
+            }
         }
 
         private async Task BuildScheduler()

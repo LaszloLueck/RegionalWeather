@@ -57,7 +57,8 @@ namespace RegionalWeather.Scheduler
             finally
             {
                 sw.Stop();
-                logger.Information($"CurrentWeatherSchedulerJob.Execute :: {sw.ElapsedMilliseconds} ms");
+                logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "CurrentWeatherSchedulerJob.Execute",
+                    sw.ElapsedMilliseconds);
             }
         }
     }

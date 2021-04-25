@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Quartz;
 using RegionalWeather.Configuration;
@@ -15,27 +16,38 @@ namespace RegionalWeather.Scheduler
     {
         public async Task Execute(IJobExecutionContext context)
         {
+            var sw = Stopwatch.StartNew();
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
             var loggingBase = (ILogger) context.JobDetail.JobDataMap["loggingBase"];
             var logger = loggingBase.ForContext<ReindexerSchedulerJobWeather>();
 
-            await Task.Run(async () =>
+            try
             {
-                logger.Information("Check if any reindex job todo.");
-                IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration, loggingBase);
-                IOwmToElasticDocumentConverter<CurrentWeatherBase> owmConverter =
-                    new OwmToElasticDocumentConverter(loggingBase);
-                IDirectoryUtils directoryUtils = new DirectoryUtils(loggingBase);
-                IProcessingBaseImplementations processingBaseImplementations =
-                    new ProcessingBaseImplementations(loggingBase);
+                await Task.Run(async () =>
+                {
+                    logger.Information("Check if any reindex job todo.");
+                    IElasticConnection elasticConnection =
+                        new ElasticConnectionBuilder().Build(configuration, loggingBase);
+                    IOwmToElasticDocumentConverter<CurrentWeatherBase> owmConverter =
+                        new OwmToElasticDocumentConverter(loggingBase);
+                    IDirectoryUtils directoryUtils = new DirectoryUtils(loggingBase);
+                    IProcessingBaseImplementations processingBaseImplementations =
+                        new ProcessingBaseImplementations(loggingBase);
 
-                var processor = new ProcessingBaseReIndexerGenericImpl<CurrentWeatherBase>(elasticConnection,
-                    owmConverter, directoryUtils, loggingBase, processingBaseImplementations);
+                    var processor = new ProcessingBaseReIndexerGenericImpl<CurrentWeatherBase>(elasticConnection,
+                        owmConverter, directoryUtils, loggingBase, processingBaseImplementations);
 
-                await processor.Process<WeatherLocationDocument>(configuration, configuration.ElasticIndexName,
-                    "FileStorage_*.dat", "FileStorage_", ".dat");
+                    await processor.Process<WeatherLocationDocument>(configuration, configuration.ElasticIndexName,
+                        "FileStorage_*.dat", "FileStorage_", ".dat");
 
-            });
+                });
+            }
+            finally
+            {
+                sw.Stop();
+                logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "ReindexerSchedulerJobWeather.Execute",
+                    sw.ElapsedMilliseconds);
+            }
         }
     }
 }

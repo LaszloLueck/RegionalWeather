@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,86 +31,96 @@ namespace RegionalWeather.Processing
             _processingBaseImplementations = processingBaseImplementations;
         }
 
-        public async Task Process<X>(ConfigurationItems configuration, string indexName, string filePattern,
-            string filPrefix, string fileSuffix) where X : ElasticDocument
+        public async Task Process<TX>(ConfigurationItems configuration, string indexName, string filePattern,
+            string filPrefix, string fileSuffix) where TX : ElasticDocument
         {
-            await Task.Run(async () =>
+            var sw = Stopwatch.StartNew();
+            try
             {
-                var continueWithDirectory = true;
-                if (!_directoryUtils.DirectoryExists(configuration.ReindexLookupPath))
+                await Task.Run(async () =>
                 {
-                    _logger.Warning("Reindex lookup directory does not exist. Lets create it");
-                    continueWithDirectory = _directoryUtils.CreateDirectory(configuration.ReindexLookupPath);
-                }
-
-                if (continueWithDirectory)
-                {
-                    var files = _directoryUtils.GetFilesOfDirectory(configuration.ReindexLookupPath,
-                        filePattern);
-
-                    var cpFiles = files;
-                    cpFiles = cpFiles.ToList();
-
-                    _logger.Information($"found {cpFiles.Count()} files to reindex for pattern {filePattern}");
-                    if (cpFiles.Any())
+                    var continueWithDirectory = true;
+                    if (!_directoryUtils.DirectoryExists(configuration.ReindexLookupPath))
                     {
-                        //Create the indexes from files
-                        var distinct = files
-                            .Select(file =>
-                                _elasticConnection.BuildIndexName(indexName,
-                                    GenerateIndexDateFromFileName(file, filPrefix, fileSuffix)))
-                            .Distinct();
-
-                        var createIndexTasks = distinct
-                            .Select(async indexName =>
-                            {
-                                if (!await _elasticConnection.IndexExistsAsync(indexName))
-                                {
-                                    await _elasticConnection.CreateIndexAsync<X>(indexName);
-                                    await _elasticConnection.RefreshIndexAsync(indexName);
-                                }
-                            });
-
-                        await Task.WhenAll(createIndexTasks);
-
-                        var tasks = (from file in files select file)
-                            .Select(async file =>
-                            {
-                                _logger.Information($"Restore data from file <{file}>");
-                                var elements = _directoryUtils.ReadAllLinesOfFile(file);
-
-                                var convertedElementTasks = elements
-                                    .Select(async element =>
-                                        await _processingBaseImplementations.DeserializeObjectAsync<T>(element));
-
-                                var convertedElements = (await Task.WhenAll(convertedElementTasks))
-                                    .Values();
-
-                                var convertedIndexDocsTasks = convertedElements
-                                    .Select(async element =>
-                                        await _owmToElasticDocumentConverter.ConvertAsync(element));
-
-                                var convertedIndexDocs = (await Task.WhenAll(convertedIndexDocsTasks)).Values();
-
-                                var usedIndexName = _elasticConnection.BuildIndexName(indexName,
-                                    GenerateIndexDateFromFileName(file, filPrefix, fileSuffix));
-
-                                convertedIndexDocs
-                                    .Select((owm, index) => new {owm, index})
-                                    .GroupBy(g => g.index / 100, o => o.owm)
-                                    .ToList()
-                                    .ForEach(async group =>
-                                        await _elasticConnection.BulkWriteDocumentsAsync(group, usedIndexName));
-
-                                await _elasticConnection.FlushIndexAsync(usedIndexName);
-                                _logger.Information($"Remove the file <{file}> after indexing");
-                                await Task.Run(() => _directoryUtils.DeleteFile(file));
-                            });
-
-                        await Task.WhenAll(tasks);
+                        _logger.Warning("Reindex lookup directory does not exist. Lets create it");
+                        continueWithDirectory = _directoryUtils.CreateDirectory(configuration.ReindexLookupPath);
                     }
-                }
-            });
+
+                    if (continueWithDirectory)
+                    {
+                        var files = _directoryUtils.GetFilesOfDirectory(configuration.ReindexLookupPath,
+                            filePattern);
+
+                        var cpFiles = files;
+                        cpFiles = cpFiles.ToList();
+
+                        _logger.Information($"found {cpFiles.Count()} files to reindex for pattern {filePattern}");
+                        if (cpFiles.Any())
+                        {
+                            //Create the indexes from files
+                            var distinct = files
+                                .Select(file =>
+                                    _elasticConnection.BuildIndexName(indexName,
+                                        GenerateIndexDateFromFileName(file, filPrefix, fileSuffix)))
+                                .Distinct();
+
+                            var createIndexTasks = distinct
+                                .Select(async indexName =>
+                                {
+                                    if (!await _elasticConnection.IndexExistsAsync(indexName))
+                                    {
+                                        await _elasticConnection.CreateIndexAsync<TX>(indexName);
+                                        await _elasticConnection.RefreshIndexAsync(indexName);
+                                    }
+                                });
+
+                            await Task.WhenAll(createIndexTasks);
+
+                            var tasks = (from file in files select file)
+                                .Select(async file =>
+                                {
+                                    _logger.Information($"Restore data from file <{file}>");
+                                    var elements = _directoryUtils.ReadAllLinesOfFile(file);
+
+                                    var convertedElementTasks = elements
+                                        .Select(async element =>
+                                            await _processingBaseImplementations.DeserializeObjectAsync<T>(element));
+
+                                    var convertedElements = (await Task.WhenAll(convertedElementTasks))
+                                        .Values();
+
+                                    var convertedIndexDocsTasks = convertedElements
+                                        .Select(async element =>
+                                            await _owmToElasticDocumentConverter.ConvertAsync(element));
+
+                                    var convertedIndexDocs = (await Task.WhenAll(convertedIndexDocsTasks)).Values();
+
+                                    var usedIndexName = _elasticConnection.BuildIndexName(indexName,
+                                        GenerateIndexDateFromFileName(file, filPrefix, fileSuffix));
+
+                                    convertedIndexDocs
+                                        .Select((owm, index) => new {owm, index})
+                                        .GroupBy(g => g.index / 100, o => o.owm)
+                                        .ToList()
+                                        .ForEach(async group =>
+                                            await _elasticConnection.BulkWriteDocumentsAsync(group, usedIndexName));
+
+                                    await _elasticConnection.FlushIndexAsync(usedIndexName);
+                                    _logger.Information($"Remove the file <{file}> after indexing");
+                                    await Task.Run(() => _directoryUtils.DeleteFile(file));
+                                });
+
+                            await Task.WhenAll(tasks);
+                        }
+                    }
+                });
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", $"PrecessingBaseReIndexerGenericImpl.Execute<{typeof(TX)}>",
+                    sw.ElapsedMilliseconds);
+            }
         }
 
         private static DateTime GenerateIndexDateFromFileName(string fileName, string prefix, string suffix)

@@ -78,7 +78,8 @@ namespace RegionalWeather.Transport.Elastic
             finally
             {
                 sw.Stop();
-                _logger.Information($"{MethodBase.GetCurrentMethod().Name} :: {sw.ElapsedMilliseconds} ms");
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", MethodBase.GetCurrentMethod().Name,
+                    sw.ElapsedMilliseconds);
             }
         }
 
@@ -92,11 +93,11 @@ namespace RegionalWeather.Transport.Elastic
                 ProcessResponse(result);
             }
             finally
-            { 
+            {
                 sw.Stop();
-                _logger.Information($"BulkWriteDocumentAsync<{typeof(T)}> :: {sw.ElapsedMilliseconds} ms");
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms",
+                    $"BulkWriteDocumentAsync<{typeof(T)}>", sw.ElapsedMilliseconds);
             }
-
         }
 
         public async Task<bool> IndexExistsAsync(string indexName)
@@ -111,7 +112,8 @@ namespace RegionalWeather.Transport.Elastic
             finally
             {
                 sw.Stop();
-                _logger.Information($"IndexExistsAsync :: {sw.ElapsedMilliseconds} ms");
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "IndexExistsAsync",
+                    sw.ElapsedMilliseconds);
             }
         }
 
@@ -131,7 +133,8 @@ namespace RegionalWeather.Transport.Elastic
             finally
             {
                 sw.Stop();
-                _logger.Information($"CreateIndexAsync :: {sw.ElapsedMilliseconds} ms");
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "CreateIndexAsync",
+                    sw.ElapsedMilliseconds);
             }
         }
 
@@ -145,12 +148,12 @@ namespace RegionalWeather.Transport.Elastic
                     .Indices
                     .RefreshAsync(indexName);
                 return ProcessResponse(result);
-
             }
             finally
             {
                 sw.Stop();
-                _logger.Information($"RefreshIndexAsync :: {sw.ElapsedMilliseconds} ms");
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "RefreshIndexAsync",
+                    sw.ElapsedMilliseconds);
             }
         }
 
@@ -168,7 +171,8 @@ namespace RegionalWeather.Transport.Elastic
             finally
             {
                 sw.Stop();
-                _logger.Information($"FlushIndexAsync :: {sw.ElapsedMilliseconds} ms");
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "FlushIndexAsync",
+                    sw.ElapsedMilliseconds);
             }
         }
 
@@ -186,7 +190,8 @@ namespace RegionalWeather.Transport.Elastic
             finally
             {
                 sw.Stop();
-                _logger.Information($"DeleteIndexAsync :: {sw.ElapsedMilliseconds} ms");
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "DeleteIndexAsync",
+                    sw.ElapsedMilliseconds);
             }
         }
 
@@ -243,7 +248,8 @@ namespace RegionalWeather.Transport.Elastic
             finally
             {
                 sw.Stop();
-                _logger.Information($"ProcessResponse<{typeof(T)}> :: {sw.ElapsedMilliseconds} ms");
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", $"ProcessResponse<{typeof(T)}>",
+                    sw.ElapsedMilliseconds);
             }
         }
     }

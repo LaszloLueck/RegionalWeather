@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using RegionalWeather.Filestorage;
 using Serilog;
@@ -25,22 +26,32 @@ namespace RegionalWeather.Processing
 
         public Task WriteFilesToDirectory<T>(string originalFilePath, ConcurrentBag<T> fileList)
         {
-            var absoluteFilePath = _fileStorage.GetAbsoluteFilePath(originalFilePath);
-            var absoluteDirectoryPath = _fileStorage.GetAbsoluteDirectoryPath(absoluteFilePath);
-            var storeFileName =
-                absoluteFilePath.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
-            _logger.Information($"check if storage directory <{storeFileName}> exists, if not try to create it.");
-            var directoryExists = _fileStorage.DirectoryExists(absoluteDirectoryPath) ||
-                                  _fileStorage.CreateDirectory(absoluteDirectoryPath);
-
-            if (directoryExists)
+            var sw = Stopwatch.StartNew();
+            try
             {
-                return _fileStorage.WriteAllDataAsync(fileList, storeFileName);
-            }
+                var absoluteFilePath = _fileStorage.GetAbsoluteFilePath(originalFilePath);
+                var absoluteDirectoryPath = _fileStorage.GetAbsoluteDirectoryPath(absoluteFilePath);
+                var storeFileName =
+                    absoluteFilePath.Replace("[CURRENTDATE]", DateTime.Now.ToString("yyyyMMdd"));
+                _logger.Information($"check if storage directory <{storeFileName}> exists, if not try to create it.");
+                var directoryExists = _fileStorage.DirectoryExists(absoluteDirectoryPath) ||
+                                      _fileStorage.CreateDirectory(absoluteDirectoryPath);
 
-            _logger.Warning(
-                $"cannot write files to path {storeFileName}, directory does not exists and cannot be created!");
-            return Task.CompletedTask;
+                if (directoryExists)
+                {
+                    return _fileStorage.WriteAllDataAsync(fileList, storeFileName);
+                }
+
+                _logger.Warning(
+                    $"cannot write files to path {storeFileName}, directory does not exists and cannot be created!");
+                return Task.CompletedTask;
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "WriteFilesToDirectory",
+                    sw.ElapsedMilliseconds);
+            }
         }
     }
 }

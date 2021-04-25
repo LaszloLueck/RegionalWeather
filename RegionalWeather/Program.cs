@@ -75,7 +75,8 @@ namespace RegionalWeather
                 finally
                 {
                     sw.Stop();
-                    logForThisClass.Information($"Main :: {sw.ElapsedMilliseconds} ms");
+                    logForThisClass.Information("Processed {MethodName} in {ElapsedMs:000} ms", "Main",
+                        sw.ElapsedMilliseconds);
                 }
 
             }).ValueOr(() => Task.CompletedTask);

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.Threading.Tasks;
 using Quartz;
 using RegionalWeather.Configuration;
 using RegionalWeather.Elastic;
@@ -14,27 +15,38 @@ namespace RegionalWeather.Scheduler
     {
         public async Task Execute(IJobExecutionContext context)
         {
+            var sw = Stopwatch.StartNew();
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
             var loggingBase = (ILogger) context.JobDetail.JobDataMap["loggingBase"];
             var logger = loggingBase.ForContext<ReindexerSchedulerJobAirPollution>();
 
-            await Task.Run(async () =>
+            try
             {
-                logger.Information("Check if any reindex job todo.");
-                IElasticConnection elasticConnection = new ElasticConnectionBuilder().Build(configuration, loggingBase);
-                IOwmToElasticDocumentConverter<AirPollutionBase> owmConverter =
-                    new AirPollutionToElasticDocumentConverter(loggingBase);
-                IDirectoryUtils directoryUtils = new DirectoryUtils(loggingBase);
-                IProcessingBaseImplementations processingBaseImplementations =
-                    new ProcessingBaseImplementations(loggingBase);
+                await Task.Run(async () =>
+                {
+                    logger.Information("Check if any reindex job todo.");
+                    IElasticConnection elasticConnection =
+                        new ElasticConnectionBuilder().Build(configuration, loggingBase);
+                    IOwmToElasticDocumentConverter<AirPollutionBase> owmConverter =
+                        new AirPollutionToElasticDocumentConverter(loggingBase);
+                    IDirectoryUtils directoryUtils = new DirectoryUtils(loggingBase);
+                    IProcessingBaseImplementations processingBaseImplementations =
+                        new ProcessingBaseImplementations(loggingBase);
 
-                var processor = new ProcessingBaseReIndexerGenericImpl<AirPollutionBase>(elasticConnection,
-                    owmConverter, directoryUtils, loggingBase, processingBaseImplementations);
+                    var processor = new ProcessingBaseReIndexerGenericImpl<AirPollutionBase>(elasticConnection,
+                        owmConverter, directoryUtils, loggingBase, processingBaseImplementations);
 
-                await processor.Process<AirPollutionDocument>(configuration, configuration.AirPollutionIndexName,
-                    "AirPollution_*.dat", "AirPollution_", ".dat");
+                    await processor.Process<AirPollutionDocument>(configuration, configuration.AirPollutionIndexName,
+                        "AirPollution_*.dat", "AirPollution_", ".dat");
 
-            });
+                });
+            }
+            finally
+            {
+                sw.Stop();
+                logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "ReindexerSchedulerJobAirPollution.Execute",
+                    sw.ElapsedMilliseconds);
+            }
         }
     }
 }

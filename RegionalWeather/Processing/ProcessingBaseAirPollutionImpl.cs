@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Optional.Collections;
@@ -41,71 +42,83 @@ namespace RegionalWeather.Processing
 
         public async Task Process(ConfigurationItems configuration)
         {
-            var locationsList =
-                (await _locationFileReader.ReadLocationsAsync(configuration.AirPollutionLocationsFile)).ValueOr(
-                    new List<string>());
-            _logger.Information($"read the list of locations with {locationsList.Count} entries");
-            var splitLocationList = locationsList.Select(element =>
+            var sw = Stopwatch.StartNew();
+            try
             {
-                var splt = element.Split(";");
-                return (splt[0], splt[1]);
-            });
-
-            var rootTasks = _processingBaseImplementations
-                .ConvertToParallelQuery(splitLocationList, configuration.Parallelism)
-                .Select(async location =>
+                var locationsList =
+                    (await _locationFileReader.ReadLocationsAsync(configuration.AirPollutionLocationsFile)).ValueOr(
+                        new List<string>());
+                _logger.Information($"read the list of locations with {locationsList.Count} entries");
+                var splitLocationList = locationsList.Select(element =>
                 {
-                    _logger.Information($"get airpollution information for configured {location}");
-                    var uri =
-                        $"https://api.openweathermap.org/data/2.5/air_pollution?{location.Item1}&appid={configuration.OwmApiKey}";
-                    var resultOpt = await _owmApiReader.ReadDataFromLocationAsync(uri);
-                    return resultOpt.Map(result => (location.Item2, result));
+                    var splt = element.Split(";");
+                    return (splt[0], splt[1]);
                 });
 
-            var rootOptions = (await Task.WhenAll(rootTasks)).Values();
-
-            var readTime = DateTime.Now;
-            _logger.Information($"define document timestamp for elastic is {readTime}");
-            var rootStrings = _processingBaseImplementations
-                .ConvertToParallelQuery(rootOptions, configuration.Parallelism)
-                .Select(async rootElement =>
-                {
-                    var elementOpt =
-                        await _processingBaseImplementations
-                            .DeserializeObjectAsync<AirPollutionBase>(rootElement.Item2);
-
-                    return elementOpt.Map(element =>
+                var rootTasks = _processingBaseImplementations
+                    .ConvertToParallelQuery(splitLocationList, configuration.Parallelism)
+                    .Select(async location =>
                     {
-                        element.LocationName = rootElement.Item1;
-                        element.ReadTime = readTime;
-                        element.Guid = Guid.NewGuid();
-                        return element;
+                        _logger.Information($"get airpollution information for configured {location}");
+                        var uri =
+                            $"https://api.openweathermap.org/data/2.5/air_pollution?{location.Item1}&appid={configuration.OwmApiKey}";
+                        var resultOpt = await _owmApiReader.ReadDataFromLocationAsync(uri);
+                        return resultOpt.Map(result => (location.Item2, result));
                     });
-                });
 
-            var toElastic = (await Task.WhenAll(rootStrings)).Values();
+                var rootOptions = (await Task.WhenAll(rootTasks)).Values();
 
-            var concurrentBag = new ConcurrentBag<AirPollutionBase>(toElastic);
+                var readTime = DateTime.Now;
+                _logger.Information($"define document timestamp for elastic is {readTime}");
+                var rootStrings = _processingBaseImplementations
+                    .ConvertToParallelQuery(rootOptions, configuration.Parallelism)
+                    .Select(async rootElement =>
+                    {
+                        var elementOpt =
+                            await _processingBaseImplementations
+                                .DeserializeObjectAsync<AirPollutionBase>(rootElement.Item2);
 
-            await _processingUtils.WriteFilesToDirectory(configuration.AirPollutionFileStoragePath, concurrentBag);
+                        return elementOpt.Map(element =>
+                        {
+                            element.LocationName = rootElement.Item1;
+                            element.ReadTime = readTime;
+                            element.Guid = Guid.NewGuid();
+                            return element;
+                        });
+                    });
 
-            var elasticDocTasks = _processingBaseImplementations
-                .ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
-                .Select(async apDoc => await _owmToElasticDocumentConverter.ConvertAsync(apDoc));
+                var toElastic = (await Task.WhenAll(rootStrings)).Values();
 
-            var elasticDocs = (await Task.WhenAll(elasticDocTasks)).Values();
+                var concurrentBag = new ConcurrentBag<AirPollutionBase>(toElastic);
+
+                await _processingUtils.WriteFilesToDirectory(configuration.AirPollutionFileStoragePath, concurrentBag);
+
+                var elasticDocTasks = _processingBaseImplementations
+                    .ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
+                    .Select(async apDoc => await _owmToElasticDocumentConverter.ConvertAsync(apDoc));
+
+                var elasticDocs = (await Task.WhenAll(elasticDocTasks)).Values();
 
 
-            var indexName = _elasticConnection.BuildIndexName(configuration.AirPollutionIndexName, readTime);
-            _logger.Information($"write airpollution data to index {indexName}");
-            if (!await _elasticConnection.IndexExistsAsync(indexName))
-            {
-                await _elasticConnection.CreateIndexAsync<AirPollutionDocument>(indexName);
-                await _elasticConnection.RefreshIndexAsync(indexName);
-                await _elasticConnection.FlushIndexAsync(indexName);
+                var indexName = _elasticConnection.BuildIndexName(configuration.AirPollutionIndexName, readTime);
+                _logger.Information($"write airpollution data to index {indexName}");
+                if (!await _elasticConnection.IndexExistsAsync(indexName))
+                {
+                    await _elasticConnection.CreateIndexAsync<AirPollutionDocument>(indexName);
+                    await _elasticConnection.RefreshIndexAsync(indexName);
+                    await _elasticConnection.FlushIndexAsync(indexName);
+                }
+
+                await _elasticConnection.BulkWriteDocumentsAsync(elasticDocs, indexName);
+
             }
-
-            await _elasticConnection.BulkWriteDocumentsAsync(elasticDocs, indexName);
+            finally
+            {
+                sw.Stop();
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "ProcessingBaseAirPollutionImpl.Execute",
+                    sw.ElapsedMilliseconds);
+            }
+            
         }
     }
 }

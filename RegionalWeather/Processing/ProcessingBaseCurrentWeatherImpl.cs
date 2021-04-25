@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Optional.Collections;
@@ -41,62 +42,73 @@ namespace RegionalWeather.Processing
 
         public async Task Process(ConfigurationItems configuration)
         {
-            _logger.Information("try to read weatherinformations");
-            var locationList =
-                (await _locationFileReader.ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(
-                    new List<string>());
-            _logger.Information($"read the list of locations with {locationList.Count} entries");
-            var rootTasksOption = _processingBaseImplementations
-                .ConvertToParallelQuery(locationList, configuration.Parallelism)
-                .Select(async location =>
-                {
-                    _logger.Information($"get weather information for configured {location}");
-                    var url =
-                        $"https://api.openweathermap.org/data/2.5/weather?{location}&APPID={configuration.OwmApiKey}&units=metric";
-                    return await _owmApiReader.ReadDataFromLocationAsync(url);
-                });
-
-            var rootOptions = (await Task.WhenAll(rootTasksOption)).Values();
-
-            var rootStrings = _processingBaseImplementations
-                .ConvertToParallelQuery(rootOptions, configuration.Parallelism)
-                .Select(async rootString =>
-                    await _processingBaseImplementations.DeserializeObjectAsync<CurrentWeatherBase>(rootString));
-
-
-            var readTime = DateTime.Now;
-            _logger.Information($"define document timestamp for elastic is {readTime}");
-            var toElastic = (await Task.WhenAll(rootStrings))
-                .Values()
-                .Select(item =>
-                {
-                    item.ReadTime = readTime;
-                    item.Guid = Guid.NewGuid();
-                    return item;
-                });
-
-            var concurrentBag = new ConcurrentBag<CurrentWeatherBase>(toElastic);
-
-            await _processingUtils.WriteFilesToDirectory(configuration.FileStorageTemplate, concurrentBag);
-
-            var elasticDocsTasks = _processingBaseImplementations
-                .ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
-                .Select(async rootDoc => await _owmToElasticDocumentConverter.ConvertAsync(rootDoc));
-
-            var elasticDocs = (await Task.WhenAll(elasticDocsTasks))
-                .Values();
-
-            var indexName = _elasticConnection.BuildIndexName(configuration.ElasticIndexName, readTime);
-            _logger.Information($"write weather data to index {indexName}");
-
-            if (!await _elasticConnection.IndexExistsAsync(indexName))
+            var sw = Stopwatch.StartNew();
+            try
             {
-                await _elasticConnection.CreateIndexAsync<WeatherLocationDocument>(indexName);
-                await _elasticConnection.RefreshIndexAsync(indexName);
-                await _elasticConnection.FlushIndexAsync(indexName);
-            }
+                _logger.Information("try to read weatherinformations");
+                var locationList =
+                    (await _locationFileReader.ReadLocationsAsync(configuration.PathToLocationsMap)).ValueOr(
+                        new List<string>());
+                _logger.Information($"read the list of locations with {locationList.Count} entries");
+                var rootTasksOption = _processingBaseImplementations
+                    .ConvertToParallelQuery(locationList, configuration.Parallelism)
+                    .Select(async location =>
+                    {
+                        _logger.Information($"get weather information for configured {location}");
+                        var url =
+                            $"https://api.openweathermap.org/data/2.5/weather?{location}&APPID={configuration.OwmApiKey}&units=metric";
+                        return await _owmApiReader.ReadDataFromLocationAsync(url);
+                    });
 
-            await _elasticConnection.BulkWriteDocumentsAsync(elasticDocs, indexName);
+                var rootOptions = (await Task.WhenAll(rootTasksOption)).Values();
+
+                var rootStrings = _processingBaseImplementations
+                    .ConvertToParallelQuery(rootOptions, configuration.Parallelism)
+                    .Select(async rootString =>
+                        await _processingBaseImplementations.DeserializeObjectAsync<CurrentWeatherBase>(rootString));
+
+
+                var readTime = DateTime.Now;
+                _logger.Information($"define document timestamp for elastic is {readTime}");
+                var toElastic = (await Task.WhenAll(rootStrings))
+                    .Values()
+                    .Select(item =>
+                    {
+                        item.ReadTime = readTime;
+                        item.Guid = Guid.NewGuid();
+                        return item;
+                    });
+
+                var concurrentBag = new ConcurrentBag<CurrentWeatherBase>(toElastic);
+
+                await _processingUtils.WriteFilesToDirectory(configuration.FileStorageTemplate, concurrentBag);
+
+                var elasticDocsTasks = _processingBaseImplementations
+                    .ConvertToParallelQuery(concurrentBag, configuration.Parallelism)
+                    .Select(async rootDoc => await _owmToElasticDocumentConverter.ConvertAsync(rootDoc));
+
+                var elasticDocs = (await Task.WhenAll(elasticDocsTasks))
+                    .Values();
+
+                var indexName = _elasticConnection.BuildIndexName(configuration.ElasticIndexName, readTime);
+                _logger.Information($"write weather data to index {indexName}");
+
+                if (!await _elasticConnection.IndexExistsAsync(indexName))
+                {
+                    await _elasticConnection.CreateIndexAsync<WeatherLocationDocument>(indexName);
+                    await _elasticConnection.RefreshIndexAsync(indexName);
+                    await _elasticConnection.FlushIndexAsync(indexName);
+                }
+
+                await _elasticConnection.BulkWriteDocumentsAsync(elasticDocs, indexName);
+
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "ProcessingBaseCurrentWeatherImpl.Execute",
+                    sw.ElapsedMilliseconds);
+            }
         }
     }
 }

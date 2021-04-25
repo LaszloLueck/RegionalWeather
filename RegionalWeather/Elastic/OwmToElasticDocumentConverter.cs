@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Nest;
 using Optional;
@@ -24,6 +25,7 @@ namespace RegionalWeather.Elastic
 
         public async Task<Option<ElasticDocument>> ConvertAsync(AirPollutionBase owmDoc)
         {
+            var sw = Stopwatch.StartNew();
             try
             {
                 var result = await Task.Run(() =>
@@ -52,6 +54,12 @@ namespace RegionalWeather.Elastic
                 _logger.Error(exception, "Error while converting to Elastic Document");
                 return Option.None<ElasticDocument>();
             }
+            finally
+            {
+                sw.Stop();
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "ConvertAsync<AirPollutionBase>",
+                    sw.ElapsedMilliseconds);
+            }
         }
     }
 
@@ -67,6 +75,7 @@ namespace RegionalWeather.Elastic
 
         public async Task<Option<ElasticDocument>> ConvertAsync(CurrentWeatherBase owmDoc)
         {
+            var sw = Stopwatch.StartNew();
             try
             {
                 var result = await Task.Run(() => Convert(owmDoc));
@@ -76,6 +85,12 @@ namespace RegionalWeather.Elastic
             {
                 _logger.Error(exception, "Error while converting to Elastic Document");
                 return Option.None<ElasticDocument>();
+            }
+            finally
+            {
+                sw.Stop();
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "ConvertAsync<CurrentWeatherBase>",
+                    sw.ElapsedMilliseconds);
             }
         }
 
