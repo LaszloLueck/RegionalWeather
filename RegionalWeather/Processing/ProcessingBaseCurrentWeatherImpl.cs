@@ -57,7 +57,7 @@ namespace RegionalWeather.Processing
                         _logger.Information($"get weather information for configured {location}");
                         var url =
                             $"https://api.openweathermap.org/data/2.5/weather?{location}&APPID={configuration.OwmApiKey}&units=metric";
-                        return await _owmApiReader.ReadDataFromLocationAsync(url);
+                        return await _owmApiReader.ReadDataFromLocationAsync(url, location);
                     });
 
                 var rootOptions = (await Task.WhenAll(rootTasksOption)).Values();

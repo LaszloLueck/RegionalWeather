@@ -11,7 +11,7 @@ namespace RegionalWeather.Transport.Owm
 
     public interface IOwmApiReader
     {
-        public Task<Option<string>> ReadDataFromLocationAsync(string url);
+        public Task<Option<string>> ReadDataFromLocationAsync(string url, string location);
     }
     
     
@@ -24,7 +24,7 @@ namespace RegionalWeather.Transport.Owm
             _logger = loggingBase.ForContext<OwmApiReader>();
         }
 
-        public async Task<Option<string>> ReadDataFromLocationAsync(string url)
+        public async Task<Option<string>> ReadDataFromLocationAsync(string url, string location)
         {
             var sw = Stopwatch.StartNew();
 
@@ -40,8 +40,8 @@ namespace RegionalWeather.Transport.Owm
             finally
             {
                 sw.Stop();
-                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", "ReadDataFromLocationAsync",
-                    sw.ElapsedMilliseconds);
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms for {Location}", "ReadDataFromLocationAsync",
+                    sw.ElapsedMilliseconds, location);
             }
         } 
         

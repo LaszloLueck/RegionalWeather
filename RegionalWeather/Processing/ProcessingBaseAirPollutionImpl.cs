@@ -62,7 +62,7 @@ namespace RegionalWeather.Processing
                         _logger.Information($"get airpollution information for configured {location}");
                         var uri =
                             $"https://api.openweathermap.org/data/2.5/air_pollution?{location.Item1}&appid={configuration.OwmApiKey}";
-                        var resultOpt = await _owmApiReader.ReadDataFromLocationAsync(uri);
+                        var resultOpt = await _owmApiReader.ReadDataFromLocationAsync(uri, location.Item1);
                         return resultOpt.Map(result => (location.Item2, result));
                     });
 
