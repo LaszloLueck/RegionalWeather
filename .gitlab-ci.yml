@@ -140,7 +140,7 @@ codeanalysis:
       - "export PATH=\"$PATH:$HOME/.dotnet/tools\""
       - "dotnet sonarscanner begin /k:\"de655c1ea0762b2da948cc9f0feb88f68fd33bb6\" /d:sonar.cs.opencover.reportsPaths=\".coverlet/coverage.opencover.xml\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
       - "dotnet build"
-      - "dotnet test DocSearchAIO_Test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=\"../.coverlet/\""
+      - "dotnet test RegionalWeatherTest /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=\"../.coverlet/\""
       - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
   allow_failure: true
   only:
