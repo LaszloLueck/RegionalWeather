@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using RegionalWeather.Logging;
 using Serilog;
 
 namespace RegionalWeather.Reindexing
@@ -10,9 +9,9 @@ namespace RegionalWeather.Reindexing
     {
         private readonly ILogger _logger;
 
-        public DirectoryUtils(ILogger loggingBase)
+        public DirectoryUtils()
         {
-            _logger = loggingBase.ForContext<DirectoryUtils>();
+            _logger = Log.Logger.ForContext<DirectoryUtils>();
         }
         
         

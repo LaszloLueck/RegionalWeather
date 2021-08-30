@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
 using Optional;
-using RegionalWeather.Logging;
 using Serilog;
 
 namespace RegionalWeather.Transport.Owm
@@ -19,9 +18,9 @@ namespace RegionalWeather.Transport.Owm
     {
         private readonly ILogger _logger;
 
-        public OwmApiReader(ILogger loggingBase)
+        public OwmApiReader()
         {
-            _logger = loggingBase.ForContext<OwmApiReader>();
+            _logger = Log.Logger.ForContext<OwmApiReader>();
         }
 
         public async Task<Option<string>> ReadDataFromLocationAsync(string url, string location)

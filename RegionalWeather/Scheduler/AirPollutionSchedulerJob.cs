@@ -33,19 +33,19 @@ namespace RegionalWeather.Scheduler
                     logger.Information($"ElasticSearch: {configuration.ElasticHostsAndPorts}");
 
                     IElasticConnection elasticConnection =
-                        new ElasticConnectionBuilder().Build(configuration, loggingBase);
-                    ILocationFileReader locationReader = new LocationFileReaderImpl(loggingBase);
-                    IFileStorage fileStorage = new FileStorageImpl(loggingBase);
-                    IProcessingUtils processingUtils = new ProcessingUtils(fileStorage, loggingBase);
-                    IOwmApiReader owmApiReader = new OwmApiReader(loggingBase);
+                        new ElasticConnectionBuilder().Build(configuration);
+                    ILocationFileReader locationReader = new LocationFileReaderImpl();
+                    IFileStorage fileStorage = new FileStorageImpl();
+                    IProcessingUtils processingUtils = new ProcessingUtils(fileStorage);
+                    IOwmApiReader owmApiReader = new OwmApiReader();
                     IOwmToElasticDocumentConverter<AirPollutionBase> owmConverter =
-                        new AirPollutionToElasticDocumentConverter(loggingBase);
+                        new AirPollutionToElasticDocumentConverter();
                     IProcessingBaseImplementations processingBaseImplementations =
-                        new ProcessingBaseImplementations(loggingBase);
+                        new ProcessingBaseImplementations();
 
                     var processor = new ProcessingBaseAirPollutionImpl(elasticConnection, locationReader,
                         processingUtils,
-                        owmApiReader, owmConverter, processingBaseImplementations, loggingBase);
+                        owmApiReader, owmConverter, processingBaseImplementations);
 
 
                     await processor.Process(configuration);

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using RegionalWeather.Logging;
 using Serilog;
 
 namespace RegionalWeather.Filestorage
@@ -27,9 +26,9 @@ namespace RegionalWeather.Filestorage
     {
         private readonly ILogger _logger;
 
-        public FileStorageImpl(ILogger loggingBase)
+        public FileStorageImpl()
         {
-            _logger = loggingBase.ForContext<FileStorageImpl>();
+            _logger = Log.Logger.ForContext<FileStorageImpl>();
         }
 
         public string GetAbsoluteFilePath(string relativePath)

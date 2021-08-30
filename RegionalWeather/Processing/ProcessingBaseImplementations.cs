@@ -23,9 +23,9 @@ namespace RegionalWeather.Processing
     {
         private readonly ILogger _logger;
 
-        public ProcessingBaseImplementations(ILogger loggingBase)
+        public ProcessingBaseImplementations()
         {
-            _logger = loggingBase.ForContext<ProcessingBaseImplementations>();
+            _logger = Log.Logger.ForContext<ProcessingBaseImplementations>();
         }
 
         public async Task<Option<T>> DeserializeObjectAsync<T>(string data)
@@ -48,7 +48,8 @@ namespace RegionalWeather.Processing
             finally
             {
                 sw.Stop();
-                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", $"DeserializeObjectAsync<{typeof(T)}>",
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms",
+                    $"DeserializeObjectAsync<{typeof(T)}>",
                     sw.ElapsedMilliseconds);
             }
         }
@@ -66,7 +67,8 @@ namespace RegionalWeather.Processing
             finally
             {
                 sw.Stop();
-                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms", $"ConvertToParallelQuery<{typeof(T)}>",
+                _logger.Information("Processed {MethodName} in {ElapsedMs:000} ms",
+                    $"ConvertToParallelQuery<{typeof(T)}>",
                     sw.ElapsedMilliseconds);
             }
         }

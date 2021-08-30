@@ -28,7 +28,7 @@ namespace RegionalWeather.Processing
         public ProcessingBaseCurrentWeatherImpl(IElasticConnection elasticConnection,
             ILocationFileReader locationFileReader, IOwmApiReader owmApiReader, IProcessingUtils processingUtils,
             IOwmToElasticDocumentConverter<CurrentWeatherBase> owmToElasticDocumentConverter,
-            IProcessingBaseImplementations processingBaseImplementations, ILogger loggingBase)
+            IProcessingBaseImplementations processingBaseImplementations)
         {
             _elasticConnection = elasticConnection;
             _locationFileReader = locationFileReader;
@@ -36,7 +36,7 @@ namespace RegionalWeather.Processing
             _processingUtils = processingUtils;
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
             _processingBaseImplementations = processingBaseImplementations;
-            _logger = loggingBase.ForContext<ProcessingBaseCurrentWeatherImpl>();
+            _logger = Log.Logger.ForContext<ProcessingBaseCurrentWeatherImpl>();
             _logger.Information("Begin with etl process of weather information for locations.");
         }
 

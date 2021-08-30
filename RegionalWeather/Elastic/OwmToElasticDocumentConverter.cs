@@ -18,9 +18,9 @@ namespace RegionalWeather.Elastic
     {
         private readonly ILogger _logger;
 
-        public AirPollutionToElasticDocumentConverter(ILogger loggingBase)
+        public AirPollutionToElasticDocumentConverter()
         {
-            _logger = loggingBase.ForContext<AirPollutionToElasticDocumentConverter>();
+            _logger = Log.Logger.ForContext<AirPollutionToElasticDocumentConverter>();
         }
 
         public async Task<Option<ElasticDocument>> ConvertAsync(AirPollutionBase owmDoc)
@@ -68,9 +68,9 @@ namespace RegionalWeather.Elastic
     {
         private readonly ILogger _logger;
 
-        public OwmToElasticDocumentConverter(ILogger loggingBase)
+        public OwmToElasticDocumentConverter()
         {
-            _logger = loggingBase.ForContext<OwmToElasticDocumentConverter>();
+            _logger = Log.Logger.ForContext<OwmToElasticDocumentConverter>();
         }
 
         public async Task<Option<ElasticDocument>> ConvertAsync(CurrentWeatherBase owmDoc)

@@ -1,11 +1,10 @@
 ﻿#pragma warning disable
 using System;
 using System.Diagnostics;
-using System.Reflection;
 using System.Threading.Tasks;
 using Optional;
 using Optional.Linq;
-using RegionalWeather.Logging;
+using Serilog;
 
 #pragma warning restore
 
@@ -38,11 +37,12 @@ namespace RegionalWeather.Configuration
 
     public class ConfigurationBuilder
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ConfigurationBuilder>.GetLogger();
         private readonly IConfigurationFactory _configurationFactory;
-
+        private readonly ILogger _logger;
+        
         public ConfigurationBuilder(IConfigurationFactory configurationFactory)
         {
+            _logger = Log.Logger.ForContext<ConfigurationBuilder>();
             _configurationFactory = configurationFactory;
         }
 
@@ -63,7 +63,7 @@ namespace RegionalWeather.Configuration
 
         private Option<ConfigurationItems> GetConfiguration()
         {
-            Log.Info("Try to read the configuration items from env vars");
+            _logger.Information("Try to read the configuration items from env vars");
             return
                 from owmApiKey in _configurationFactory.ReadEnvironmentVariableString(EnvEntries.OwmApiKey)
                 from runsEvery in _configurationFactory.ReadEnvironmentVariableInt(EnvEntries.RunsEvery)
