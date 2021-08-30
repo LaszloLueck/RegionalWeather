@@ -20,8 +20,8 @@ namespace RegionalWeather.Scheduler
         {
             var sw = Stopwatch.StartNew();
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
-            var loggingBase = (ILogger) context.JobDetail.JobDataMap["loggingBase"];
-            var logger = loggingBase.ForContext<CurrentWeatherSchedulerJob>();
+
+            var logger = Log.Logger.ForContext<CurrentWeatherSchedulerJob>();
             try
             {
                 await Task.Run(async () =>
@@ -33,21 +33,21 @@ namespace RegionalWeather.Scheduler
                     logger.Information($"Write to Elastic index: {configuration.ElasticIndexName}");
                     logger.Information($"ElasticSearch: {configuration.ElasticHostsAndPorts}");
 
-                    IFileStorage storage = new FileStorageImpl(loggingBase);
-                    IProcessingUtils processingUtils = new ProcessingUtils(storage, loggingBase);
+                    IFileStorage storage = new FileStorageImpl();
+                    IProcessingUtils processingUtils = new ProcessingUtils(storage);
                     IElasticConnection elasticConnection =
-                        new ElasticConnectionBuilder().Build(configuration, loggingBase);
-                    ILocationFileReader locationReader = new LocationFileReaderImpl(loggingBase);
-                    IOwmApiReader owmReader = new OwmApiReader(loggingBase);
+                        new ElasticConnectionBuilder().Build(configuration);
+                    ILocationFileReader locationReader = new LocationFileReaderImpl();
+                    IOwmApiReader owmReader = new OwmApiReader();
                     IOwmToElasticDocumentConverter<CurrentWeatherBase> owmConverter =
-                        new OwmToElasticDocumentConverter(loggingBase);
+                        new OwmToElasticDocumentConverter();
                     IProcessingBaseImplementations processingBaseImplementations =
-                        new ProcessingBaseImplementations(loggingBase);
+                        new ProcessingBaseImplementations();
 
                     var processor =
                         new ProcessingBaseCurrentWeatherImpl(elasticConnection, locationReader, owmReader,
                             processingUtils,
-                            owmConverter, processingBaseImplementations, loggingBase);
+                            owmConverter, processingBaseImplementations);
 
 
                     await processor.Process(configuration);

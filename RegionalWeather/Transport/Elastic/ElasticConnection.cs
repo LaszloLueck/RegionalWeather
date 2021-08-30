@@ -14,14 +14,14 @@ namespace RegionalWeather.Transport.Elastic
 {
     public interface IElasticConnectionBuilder
     {
-        ElasticConnection Build(ConfigurationItems configurationItems, ILogger loggingBase);
+        ElasticConnection Build(ConfigurationItems configurationItems);
     }
 
     public class ElasticConnectionBuilder : IElasticConnectionBuilder
     {
-        public ElasticConnection Build(ConfigurationItems configurationItems, ILogger loggingBase)
+        public ElasticConnection Build(ConfigurationItems configurationItems)
         {
-            return new ElasticConnection(configurationItems, loggingBase);
+            return new ElasticConnection(configurationItems);
         }
     }
 
@@ -49,11 +49,11 @@ namespace RegionalWeather.Transport.Elastic
             return hostsAndPorts.Split(",").Select(uri => new Uri(uri));
         }
 
-        public ElasticConnection(ConfigurationItems configurationItems, ILogger loggingBase)
+        public ElasticConnection(ConfigurationItems configurationItems)
         {
             var pool = new StaticConnectionPool(BuildServerList(configurationItems.ElasticHostsAndPorts).ToArray());
             var setting = new ConnectionSettings(pool);
-            _logger = loggingBase.ForContext<ElasticConnection>();
+            _logger = Log.Logger.ForContext<ElasticConnection>();
             _elasticClient = new ElasticClient(setting);
         }
 

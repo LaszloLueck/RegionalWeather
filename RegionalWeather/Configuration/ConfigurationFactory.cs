@@ -1,14 +1,11 @@
 using System;
-using System.Threading.Tasks;
 using Optional;
-using RegionalWeather.Logging;
+using Serilog;
 
 namespace RegionalWeather.Configuration
 {
     public class ConfigurationFactory : IConfigurationFactory
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<ConfigurationFactory>.GetLogger();
-
         public Option<string> ReadEnvironmentVariableString(EnvEntries value, bool returnEmptyStringIfNoValue = false)
         {
             //Put some sugar here to tell why the container stops.
@@ -18,7 +15,7 @@ namespace RegionalWeather.Configuration
                 {
                     if (returnEmptyStringIfNoValue)
                         return Option.Some(string.Empty);
-                    Task.Run(async () => { await Log.InfoAsync($"No entry found for environment variable {value}"); });
+                    Log.Information($"No entry found for environment variable {value}");
                     return Option.None<string>();
                 }
             );
@@ -32,10 +29,7 @@ namespace RegionalWeather.Configuration
                     : LogAndReturnNone<int>(value.ToString(), variable),
                 none: () =>
                 {
-                    Task.Run(async () =>
-                    {
-                        await Log.WarningAsync($"No entry found for environment variable {value}");
-                    });
+                    Log.Warning($"No entry found for environment variable {value}");
                     return Option.None<int>();
                 }
             );
@@ -43,10 +37,7 @@ namespace RegionalWeather.Configuration
 
         private static Option<T> LogAndReturnNone<T>(string envName, string value)
         {
-            Task.Run(async () =>
-            {
-                await Log.WarningAsync($"Cannot convert value {value} for env variable {envName}");
-            });
+            Log.Warning($"Cannot convert value {value} for env variable {envName}");
             return Option.None<T>();
         }
 
@@ -58,10 +49,7 @@ namespace RegionalWeather.Configuration
                     : LogAndReturnNone<bool>(value.ToString(), variable),
                 none: () =>
                 {
-                    Task.Run(async () =>
-                    {
-                        await Log.WarningAsync($"No entry found for environment variable {value}");
-                    });
+                    Log.Warning($"No entry found for environment variable {value}");
                     return Option.None<bool>();
                 }
             );

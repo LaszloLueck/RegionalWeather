@@ -21,10 +21,10 @@ namespace RegionalWeather.Processing
         private readonly IProcessingBaseImplementations _processingBaseImplementations;
 
         public ProcessingBaseReIndexerGenericImpl(IElasticConnection elasticConnection,
-            IOwmToElasticDocumentConverter<T> owmDocumentConverter, IDirectoryUtils directoryUtils, ILogger loggingBase,
+            IOwmToElasticDocumentConverter<T> owmDocumentConverter, IDirectoryUtils directoryUtils,
             IProcessingBaseImplementations processingBaseImplementations)
         {
-            _logger = loggingBase.ForContext<ProcessingBaseReIndexerGenericImpl<T>>();
+            _logger = Log.Logger.ForContext<ProcessingBaseReIndexerGenericImpl<T>>();
             _elasticConnection = elasticConnection;
             _owmToElasticDocumentConverter = owmDocumentConverter;
             _directoryUtils = directoryUtils;

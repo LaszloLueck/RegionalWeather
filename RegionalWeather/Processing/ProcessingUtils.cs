@@ -11,17 +11,17 @@ namespace RegionalWeather.Processing
     {
         public Task WriteFilesToDirectory<T>(string originalFilePath, ConcurrentBag<T> fileList);
     }
-    
-    
-    public class ProcessingUtils: IProcessingUtils
+
+
+    public class ProcessingUtils : IProcessingUtils
     {
         private readonly IFileStorage _fileStorage;
         private readonly ILogger _logger;
 
-        public ProcessingUtils(IFileStorage fileStorage, ILogger loggingBase)
+        public ProcessingUtils(IFileStorage fileStorage)
         {
             _fileStorage = fileStorage;
-            _logger = loggingBase.ForContext<ProcessingUtils>();
+            _logger = Log.Logger.ForContext<ProcessingUtils>();
         }
 
         public Task WriteFilesToDirectory<T>(string originalFilePath, ConcurrentBag<T> fileList)

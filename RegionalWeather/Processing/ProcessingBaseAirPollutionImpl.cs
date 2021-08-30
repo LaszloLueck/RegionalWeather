@@ -28,7 +28,7 @@ namespace RegionalWeather.Processing
         public ProcessingBaseAirPollutionImpl(IElasticConnection elasticConnection,
             ILocationFileReader locationFileReader, IProcessingUtils processingUtils,
             IOwmApiReader owmApiReader, IOwmToElasticDocumentConverter<AirPollutionBase> owmToElasticDocumentConverter,
-            IProcessingBaseImplementations processingBaseImplementations, ILogger loggingBase)
+            IProcessingBaseImplementations processingBaseImplementations)
         {
             _elasticConnection = elasticConnection;
             _locationFileReader = locationFileReader;
@@ -36,7 +36,7 @@ namespace RegionalWeather.Processing
             _processingUtils = processingUtils;
             _owmToElasticDocumentConverter = owmToElasticDocumentConverter;
             _processingBaseImplementations = processingBaseImplementations;
-            _logger = loggingBase.ForContext<ProcessingBaseAirPollutionImpl>();
+            _logger = Log.Logger.ForContext<ProcessingBaseAirPollutionImpl>();
             _logger.Information("Begin with etl process of airpollution information for locations.");
         }
 

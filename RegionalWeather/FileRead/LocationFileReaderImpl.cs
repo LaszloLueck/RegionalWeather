@@ -17,9 +17,9 @@ namespace RegionalWeather.FileRead
     {
         private readonly ILogger _logger;
         
-        public LocationFileReaderImpl(ILogger loggingBase)
+        public LocationFileReaderImpl()
         {
-            _logger = loggingBase.ForContext<LocationFileReaderImpl>();
+            _logger = Log.Logger.ForContext<LocationFileReaderImpl>();
         }
 
         public async Task<Option<List<string>>> ReadLocationsAsync(string locationPath)

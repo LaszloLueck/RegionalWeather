@@ -4,9 +4,7 @@ using System.Threading.Tasks;
 using Quartz;
 using Quartz.Impl;
 using RegionalWeather.Configuration;
-using RegionalWeather.Logging;
 using Serilog;
-using Serilog.Core;
 
 namespace RegionalWeather.Scheduler
 {
@@ -19,14 +17,13 @@ namespace RegionalWeather.Scheduler
         private IScheduler _scheduler;
         private readonly StdSchedulerFactory _factory;
         private readonly ConfigurationItems _configurationItems;
-        private readonly ILogger _loggingBase;
         private readonly int _runsEvery;
         private readonly int _delay;
 
         public CustomSchedulerFactory(string jobName, string groupName, string triggerName, int delay, int runsEvery,
-            ConfigurationItems configurationItems, ILogger loggingBase)
+            ConfigurationItems configurationItems)
         {
-            _logger = loggingBase.ForContext<CustomSchedulerFactory<T>>();
+            _logger = Log.Logger.ForContext<CustomSchedulerFactory<T>>();
 
             _logger.Information("Generate Scheduler with Values: ");
             _logger.Information($"JobName: {jobName}");
@@ -38,7 +35,6 @@ namespace RegionalWeather.Scheduler
             _groupName = groupName;
             _triggerName = triggerName;
             _configurationItems = configurationItems;
-            _loggingBase = loggingBase;
             _runsEvery = runsEvery;
             _delay = delay;
             _factory = new StdSchedulerFactory();
@@ -98,7 +94,6 @@ namespace RegionalWeather.Scheduler
             var job = GetJob();
             var trigger = GetTrigger();
             job.JobDataMap.Put("configuration", _configurationItems);
-            job.JobDataMap.Put("loggingBase", _loggingBase);
             _logger.Information("Schedule Job");
             await _scheduler.ScheduleJob(job, trigger);
         }

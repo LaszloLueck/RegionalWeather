@@ -26,15 +26,15 @@ namespace RegionalWeather.Scheduler
                 {
                     logger.Information("Check if any reindex job todo.");
                     IElasticConnection elasticConnection =
-                        new ElasticConnectionBuilder().Build(configuration, loggingBase);
+                        new ElasticConnectionBuilder().Build(configuration);
                     IOwmToElasticDocumentConverter<AirPollutionBase> owmConverter =
-                        new AirPollutionToElasticDocumentConverter(loggingBase);
-                    IDirectoryUtils directoryUtils = new DirectoryUtils(loggingBase);
+                        new AirPollutionToElasticDocumentConverter();
+                    IDirectoryUtils directoryUtils = new DirectoryUtils();
                     IProcessingBaseImplementations processingBaseImplementations =
-                        new ProcessingBaseImplementations(loggingBase);
+                        new ProcessingBaseImplementations();
 
                     var processor = new ProcessingBaseReIndexerGenericImpl<AirPollutionBase>(elasticConnection,
-                        owmConverter, directoryUtils, loggingBase, processingBaseImplementations);
+                        owmConverter, directoryUtils, processingBaseImplementations);
 
                     await processor.Process<AirPollutionDocument>(configuration, configuration.AirPollutionIndexName,
                         "AirPollution_*.dat", "AirPollution_", ".dat");
