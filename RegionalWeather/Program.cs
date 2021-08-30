@@ -1,28 +1,33 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
-using Optional;
 using Optional.Linq;
 using RegionalWeather.Configuration;
 using RegionalWeather.Logging;
 using RegionalWeather.Scheduler;
 using Serilog;
+using Serilog.Enrichers.WithCaller;
+using Serilog.Sinks.SystemConsole.Themes;
 
 namespace RegionalWeather
 {
     class Program
     {
-        private static readonly IMySimpleLogger Log = MySimpleLoggerImpl<Program>.GetLogger();
-
         protected Program()
         {
         }
 
         static async Task Main(string[] args)
         {
-            await Log.InfoAsync("starting app");
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.Console(theme: AnsiConsoleTheme.Code,
+                    outputTemplate: "[{Timestamp:yyy-MM-dd HH:mm:ss} {Level:u4}] {Caller}{NewLine}{Message:lj}{NewLine}{Exception}")
+                .Enrich.FromLogContext()
+                .Enrich.WithCaller()
+                .CreateLogger();
+
+            Log.Information("starting app");
 
             IConfigurationFactory configurationFactory = new ConfigurationFactory();
 
@@ -30,7 +35,7 @@ namespace RegionalWeather
                 from configuration in await new ConfigurationBuilder(configurationFactory).GetConfigurationAsync()
                 from seriLogger in SerilogLoggerFactory.BuildLogger(configuration)
                 select new Tuple<ConfigurationItems, ILogger>(configuration, seriLogger);
-            
+
             var mainTask = startupObjectOpt.Map(tpl =>
             {
                 var configuration = tpl.Item1;
@@ -78,7 +83,6 @@ namespace RegionalWeather
                     logForThisClass.Information("Processed {MethodName} in {ElapsedMs:000} ms", "Main",
                         sw.ElapsedMilliseconds);
                 }
-
             }).ValueOr(() => Task.CompletedTask);
 
 
