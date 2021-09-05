@@ -11,10 +11,9 @@ using Serilog;
 namespace RegionalWeather.Configuration
 {
     public sealed record ConfigurationItems(string OwmApiKey, int RunsEvery, string PathToLocationsMap,
-        int Parallelism, string ElasticHostsAndPorts, string ElasticIndexName, string FileStorageTemplate,
-        int ReindexLookupEvery, string ReindexLookupPath, int AirPollutionRunsEvery, string AirPollutionIndexName,
-        string AirPollutionLocationsFile, string AirPollutionFileStoragePath, bool LogToElasticSearch,
-        string ElasticSearchLogIndexName);
+        int Parallelism, string ElasticHostsAndPorts, string ElasticIndexName, string FileStorageTemplate, 
+        int AirPollutionRunsEvery, string AirPollutionIndexName,
+        string AirPollutionLocationsFile, string AirPollutionFileStoragePath);
 
     public enum EnvEntries
     {
@@ -25,14 +24,10 @@ namespace RegionalWeather.Configuration
         ElasticHostsAndPorts,
         ElasticIndexName,
         FileStorageTemplate,
-        ReindexLookupEvery,
-        ReindexLookupPath,
         AirPollutionRunsEvery,
         AirPollutionIndexName,
         AirPollutionLocationsFile,
-        AirPollutionFileStoragePath,
-        LogToElasticSearch,
-        ElasticSearchLogIndexName
+        AirPollutionFileStoragePath
     }
 
     public class ConfigurationBuilder
@@ -76,10 +71,6 @@ namespace RegionalWeather.Configuration
                     EnvEntries.ElasticIndexName)
                 from fileStorageTemplate in _configurationFactory.ReadEnvironmentVariableString(EnvEntries
                     .FileStorageTemplate)
-                from reindexLookupEvery in _configurationFactory.ReadEnvironmentVariableInt(EnvEntries
-                    .ReindexLookupEvery)
-                from reindexLookupPath in _configurationFactory.ReadEnvironmentVariableString(EnvEntries
-                    .ReindexLookupPath)
                 from airPollutionRunsEvery in _configurationFactory.ReadEnvironmentVariableInt(EnvEntries
                     .AirPollutionRunsEvery)
                 from airPollutionIndexName in _configurationFactory.ReadEnvironmentVariableString(EnvEntries
@@ -88,14 +79,10 @@ namespace RegionalWeather.Configuration
                     .AirPollutionLocationsFile)
                 from airPollutionFileStoragePath in _configurationFactory.ReadEnvironmentVariableString(EnvEntries
                     .AirPollutionFileStoragePath)
-                from logToElasticSearch in _configurationFactory.ReadEnvironmentVariableBool(EnvEntries
-                    .LogToElasticSearch)
-                from elasticSearchLogIndexName in _configurationFactory.ReadEnvironmentVariableString(EnvEntries
-                    .ElasticSearchLogIndexName)
                 select new ConfigurationItems(owmApiKey, runsEvery, pathToLocationsMap, parallelism,
-                    elasticHostsAndPorts, elasticIndexName, fileStorageTemplate, reindexLookupEvery, reindexLookupPath,
+                    elasticHostsAndPorts, elasticIndexName, fileStorageTemplate,
                     airPollutionRunsEvery, airPollutionIndexName, airPollutionLocationsFile,
-                    airPollutionFileStoragePath, logToElasticSearch, elasticSearchLogIndexName);
+                    airPollutionFileStoragePath);
         }
     }
 }
