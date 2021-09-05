@@ -19,8 +19,7 @@ namespace RegionalWeather.Scheduler
         {
             var sw = Stopwatch.StartNew();
             var configuration = (ConfigurationItems) context.JobDetail.JobDataMap["configuration"];
-            var loggingBase = (ILogger) context.JobDetail.JobDataMap["loggingBase"];
-            var logger = loggingBase.ForContext<AirPollutionSchedulerJob>();
+            var logger = Log.Logger.ForContext<AirPollutionSchedulerJob>();
             try
             {
                 await Task.Run(async () =>
