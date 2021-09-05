@@ -7,6 +7,7 @@ using RegionalWeather.Configuration;
 using RegionalWeather.Scheduler;
 using Serilog;
 using Serilog.Core;
+using Serilog.Enrichers.ShortTypeName;
 using Serilog.Enrichers.WithCaller;
 using Serilog.Sinks.Elasticsearch;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -15,25 +16,15 @@ namespace RegionalWeather
 {
     internal static class BuildLoggerConfiguration
     {
-        public static Logger Build(Option<ConfigurationItems> configurationOpt)
+        public static Logger Build()
         {
-            return configurationOpt.Match(
-                _ => new LoggerConfiguration()
-                    .MinimumLevel.Information()
-                    .WriteTo.Console(theme: AnsiConsoleTheme.Code,
-                        outputTemplate:
-                        "[{Timestamp:yyy-MM-dd HH:mm:ss} {Level:u4}] {Caller}{NewLine}{Message:lj}{NewLine}{Exception}")
-                    .Enrich.FromLogContext()
-                    .Enrich.WithCaller()
-                    .CreateLogger(),
-                () => new LoggerConfiguration()
-                    .MinimumLevel.Information()
-                    .WriteTo.Console(theme: AnsiConsoleTheme.Code,
-                        outputTemplate:
-                        "[{Timestamp:yyy-MM-dd HH:mm:ss} {Level:u4}] {Caller}{NewLine}{Message:lj}{NewLine}{Exception}")
-                    .Enrich.FromLogContext()
-                    .Enrich.WithCaller()
-                    .CreateLogger());
+            return new LoggerConfiguration()
+                .Enrich.WithShortTypeName()
+                .MinimumLevel.Information()
+                .WriteTo.Console(theme: AnsiConsoleTheme.Code,
+                    outputTemplate:
+                    "[{Timestamp:yyy-MM-dd HH:mm:ss} {Level:u3} {ShortTypeName}] {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
         }
     }
 
@@ -47,7 +38,7 @@ namespace RegionalWeather
 
         static async Task Main(string[] args)
         {
-            Log.Logger = BuildLoggerConfiguration.Build(Option.None<ConfigurationItems>());
+            Log.Logger = BuildLoggerConfiguration.Build();
 
             _logger = Log.Logger.ForContext<Program>();
             _logger.Information("starting app");
