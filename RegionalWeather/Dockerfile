@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:5.0-focal AS build-env
 LABEL MAINTAINER="Laszlo Lueck <llueck@gmail.com>"
 WORKDIR /app
-COPY *.csproj ./
+COPY RegionalWeather.csproj ./
 RUN dotnet restore
 
 COPY . ./
