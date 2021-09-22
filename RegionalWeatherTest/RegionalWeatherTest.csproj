@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
-
         <IsPackable>false</IsPackable>
+		<ProjectGuid>{E93E1D36-FABE-454B-849A-166A17E2488A}</ProjectGuid>
     </PropertyGroup>
 
     <ItemGroup>
